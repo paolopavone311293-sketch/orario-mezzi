@@ -4,7 +4,7 @@ import { db } from '../db.js';
 export const peopleRouter = Router();
 
 peopleRouter.get('/', (req, res) => {
-  const people = db.prepare('SELECT id, name, active FROM people ORDER BY name').all();
+  const people = db.prepare('SELECT id, name, active FROM people ORDER BY id').all();
   res.json(people);
 });
 

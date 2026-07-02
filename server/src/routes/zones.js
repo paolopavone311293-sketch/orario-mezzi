@@ -4,8 +4,8 @@ import { db } from '../db.js';
 export const zonesRouter = Router();
 
 zonesRouter.get('/', (req, res) => {
-  const zones = db.prepare('SELECT id, name FROM zones ORDER BY name').all();
-  const vehicles = db.prepare('SELECT id, name, zone_id AS zoneId, in_repair AS inRepair FROM vehicles ORDER BY name').all();
+  const zones = db.prepare('SELECT id, name FROM zones ORDER BY id').all();
+  const vehicles = db.prepare('SELECT id, name, zone_id AS zoneId, in_repair AS inRepair FROM vehicles ORDER BY id').all();
   const result = zones.map((zone) => ({
     ...zone,
     vehicles: vehicles.filter((v) => v.zoneId === zone.id),
