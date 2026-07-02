@@ -1,0 +1,287 @@
+.attendance-page {
+  max-width: 1400px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  margin-bottom: 4px;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.week-nav {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 8px;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  align-items: center;
+}
+
+.week-nav > button:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.week-nav > button:nth-child(4) {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.week-nav > div {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  text-align: center;
+}
+
+.week-label {
+  color: var(--color-primary);
+  font-size: 14px;
+}
+
+.add-person {
+  display: flex;
+  gap: 12px;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.add-person input {
+  flex: 1;
+  max-width: 400px;
+}
+
+.add-person button {
+  min-width: 100px;
+}
+
+.attendance-table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+
+.attendance-table {
+  min-width: 100%;
+}
+
+.attendance-table th {
+  background: linear-gradient(to right, #f8fafc, #f1f5f9);
+  padding: 8px 4px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-gray-700);
+  text-align: center;
+}
+
+.day-header {
+  min-width: 70px;
+}
+
+.day-name {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-gray-600);
+}
+
+.day-date {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-top: 2px;
+}
+
+.attendance-table td {
+  padding: 6px 8px;
+  text-align: center;
+  border-bottom: none;
+  vertical-align: middle;
+}
+
+.attendance-table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.number-header {
+  width: 50px;
+  min-width: 50px;
+}
+
+.number-cell {
+  width: 50px;
+  min-width: 50px;
+  text-align: center;
+  padding: 12px 8px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  border-bottom: none;
+}
+
+.person-cell {
+  text-align: left;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(249, 250, 251, 0.5);
+  min-width: 200px;
+}
+
+.person-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.status-cell {
+  padding: 8px;
+}
+
+.status-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-btn.status-present {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-light);
+}
+
+.status-btn.status-present:hover {
+  background: var(--color-success);
+  color: white;
+}
+
+.status-btn.status-absent {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-light);
+}
+
+.status-btn.status-absent:hover {
+  background: var(--color-danger);
+  color: white;
+}
+
+.status-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-cell {
+  padding: 12px 16px;
+}
+
+.action-cell button {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.legend {
+  display: flex;
+  gap: 32px;
+  margin-top: 20px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.legend-badge {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.badge-present {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.badge-absent {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+@media (max-width: 1024px) {
+  .week-nav {
+    flex-direction: column;
+  }
+
+  .week-label {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .add-person {
+    flex-direction: column;
+  }
+
+  .add-person input {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .person-cell {
+    min-width: 120px;
+  }
+
+  .day-header {
+    min-width: 70px;
+  }
+
+  .status-btn {
+    font-size: 12px;
+  }
+
+  .legend {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

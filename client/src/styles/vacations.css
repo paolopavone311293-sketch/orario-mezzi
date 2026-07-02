@@ -1,0 +1,204 @@
+.vacations-page {
+  max-width: 800px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  margin-bottom: 4px;
+}
+
+.vacations-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.selector-card,
+.add-vacation-card,
+.vacations-list-card,
+.week-display-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.selector-card h3,
+.add-vacation-card h3,
+.vacations-list-card h3,
+.week-display-card h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.week-table-container {
+  overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.week-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.week-table th {
+  background: linear-gradient(to right, #f8fafc, #f1f5f9);
+  padding: 8px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-gray-700);
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.week-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.week-table .name-col {
+  text-align: left;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.week-table th.name-col {
+  text-align: left;
+}
+
+.week-table .day-col {
+  min-width: 80px;
+}
+
+.week-table th .day-name {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.week-table th .day-date {
+  font-size: 11px;
+  color: var(--color-text-light);
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+.week-table tbody tr:hover {
+  background: rgba(30, 64, 175, 0.02);
+}
+
+.week-table td.day-col.vacation {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.selector-card select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-gray-700);
+}
+
+.form-group input {
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.days-info {
+  padding: 12px;
+  background: var(--color-primary-light);
+  background: rgba(96, 165, 250, 0.1);
+  color: var(--color-primary);
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.days-info strong {
+  font-weight: 700;
+}
+
+button.full-width {
+  width: 100%;
+}
+
+.vacations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vacation-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.vacation-item:hover {
+  background: var(--color-gray-100);
+}
+
+.vacation-content {
+  flex: 1;
+}
+
+.vacation-dates {
+  font-weight: 600;
+  color: var(--color-gray-900);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.vacation-days {
+  font-size: 13px;
+  color: var(--color-text-light);
+}
+
+.vacation-item button {
+  flex-shrink: 0;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--color-text-light);
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

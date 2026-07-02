@@ -1,0 +1,230 @@
+.vehicles-page {
+  max-width: 1000px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  margin-bottom: 4px;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.date-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.date-selector label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.date-selector input[type='date'] {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(34 * 30px + 48px);
+  padding: 0;
+  margin: 0;
+}
+
+.vehicles-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.vehicles-table th {
+  background: linear-gradient(to right, #f8fafc, #f1f5f9);
+  padding: 8px 12px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-gray-700);
+  text-align: left;
+  font-size: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.vehicles-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.vehicles-table tbody tr:hover {
+  background: rgba(30, 64, 175, 0.02);
+}
+
+.vehicles-table tbody tr.empty td {
+  color: var(--color-text-light);
+}
+
+.vehicles-table tbody tr.in-repair {
+  background: #ff6b6b;
+}
+
+.vehicles-table tbody tr.in-repair:hover {
+  background: #ff5252;
+}
+
+.vehicles-table tbody tr.in-repair td {
+  color: white;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Colonne */
+.col-numero {
+  width: 80px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--color-gray-600);
+}
+
+.col-targa {
+  width: 160px;
+  font-weight: 500;
+}
+
+.col-nome {
+  flex: 1;
+  min-width: 300px;
+}
+
+/* Contenuto celle */
+.names-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.name-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.remove-name {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-danger);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.remove-name:hover {
+  transform: scale(1.2);
+}
+
+.assign-select {
+  width: 100%;
+  max-width: 300px;
+  padding: 8px 10px;
+  font-size: 13px;
+  background: white;
+  border: 1px solid var(--color-primary-light);
+  border-radius: 4px;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.assign-select:hover {
+  background: var(--color-primary-light);
+  color: white;
+}
+
+.editable-targa {
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  transition: all 0.2s;
+}
+
+.editable-targa.editable {
+  cursor: pointer;
+}
+
+.editable-targa.editable:hover {
+  background-color: rgba(30, 64, 175, 0.08);
+}
+
+.editable-targa.disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.vehicle-name-input {
+  width: 100%;
+  max-width: 150px;
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 2px solid var(--color-primary);
+  border-radius: 4px;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+@media (max-width: 768px) {
+  .table-container {
+    max-height: 60vh;
+  }
+
+  .vehicles-table th,
+  .vehicles-table td {
+    padding: 10px;
+  }
+
+  .col-numero {
+    width: 60px;
+    font-size: 13px;
+  }
+
+  .col-targa {
+    width: 120px;
+    font-size: 13px;
+  }
+
+  .col-nome {
+    min-width: 200px;
+    font-size: 13px;
+  }
+}
