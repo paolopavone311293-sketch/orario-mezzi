@@ -15,7 +15,9 @@ export function VehiclesPage() {
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
   const [editingVehicleName, setEditingVehicleName] = useState('');
 
-  const loadZones = () => api.zones.list().then(setZones);
+  const loadZones = () => api.zones.list().then((data: any) => {
+    setZones(data.filter((z: any) => z.id !== undefined));
+  });
 
   useEffect(() => {
     loadZones();
@@ -26,6 +28,16 @@ export function VehiclesPage() {
     api.attendance.range(date, date).then(setAttendance);
     api.assignments.forDate(date).then(setAssignments);
   }, [date]);
+
+  const allVehicles = useMemo(() => {
+    const vehicles: any[] = [];
+    zones.forEach((z) => {
+      z.vehicles?.forEach((v) => {
+        vehicles.push(v);
+      });
+    });
+    return vehicles.sort((a, b) => (a.position || 0) - (b.position || 0));
+  }, [zones]);
 
   const presentPeople = useMemo(() => {
     const statusByPerson = new Map(attendance.map((a) => [a.personId, a.status]));
@@ -67,8 +79,6 @@ export function VehiclesPage() {
       console.error('Error updating vehicle:', err);
     }
   };
-
-  const allVehicles = zones.flatMap((z) => z.vehicles);
 
   // Crea array di 34 elementi (vuoti o con dati)
   const rows = Array.from({ length: 34 }, (_, i) => {
@@ -162,7 +172,7 @@ export function VehiclesPage() {
                       >
                         {vehicle.name || '—'}
                       </span>
-                    ) : editVehicles ? (
+                    ) : (
                       <span
                         onClick={() => {
                           setEditingVehicleId(-row.numero);
@@ -172,8 +182,6 @@ export function VehiclesPage() {
                       >
                         Aggiungi targa
                       </span>
-                    ) : (
-                      '—'
                     )}
                   </td>
                   <td className="col-nome">

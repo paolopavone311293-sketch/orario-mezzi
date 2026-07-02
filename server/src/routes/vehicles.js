@@ -8,9 +8,11 @@ vehiclesRouter.post('/', (req, res) => {
   if (!name || !name.trim() || !zoneId) {
     return res.status(400).json({ error: 'name and zoneId are required' });
   }
-  const info = db.prepare('INSERT INTO vehicles (name, zone_id) VALUES (?, ?)').run(name.trim(), Number(zoneId));
+  const maxPosition = db.prepare('SELECT MAX(position) AS max FROM vehicles').get().max || 0;
+  const nextPosition = maxPosition + 1;
+  const info = db.prepare('INSERT INTO vehicles (name, zone_id, position) VALUES (?, ?, ?)').run(name.trim(), Number(zoneId), nextPosition);
   const vehicle = db
-    .prepare('SELECT id, name, zone_id AS zoneId, in_repair AS inRepair FROM vehicles WHERE id = ?')
+    .prepare('SELECT id, name, zone_id AS zoneId, in_repair AS inRepair, position FROM vehicles WHERE id = ?')
     .get(Number(info.lastInsertRowid));
   res.status(201).json(vehicle);
 });

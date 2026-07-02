@@ -5,9 +5,9 @@ export const zonesRouter = Router();
 
 zonesRouter.get('/', (req, res) => {
   const zones = db.prepare('SELECT id, name FROM zones ORDER BY id').all();
-  const vehicles = db.prepare('SELECT id, name, zone_id AS zoneId, in_repair AS inRepair FROM vehicles ORDER BY id').all();
+  const allVehicles = db.prepare('SELECT id, name, zone_id AS zoneId, in_repair AS inRepair, position FROM vehicles ORDER BY position').all();
   const vehiclesByZone = {};
-  vehicles.forEach((v) => {
+  allVehicles.forEach((v) => {
     if (!vehiclesByZone[v.zoneId]) vehiclesByZone[v.zoneId] = [];
     vehiclesByZone[v.zoneId].push(v);
   });
@@ -15,6 +15,7 @@ zonesRouter.get('/', (req, res) => {
     ...zone,
     vehicles: vehiclesByZone[zone.id] || [],
   }));
+  result._allVehicles = allVehicles;
   res.json(result);
 });
 
