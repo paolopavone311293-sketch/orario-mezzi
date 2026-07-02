@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import type { Zone } from '../lib/types';
-import ExcelJS from 'exceljs';
+import ExcelJS, { type BorderStyle } from 'exceljs';
 import '../styles/settings.css';
 
 export function SettingsPage() {
-  const [zones, setZones] = useState<Zone[]>([]);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
   useEffect(() => {
@@ -82,11 +81,11 @@ export function SettingsPage() {
     }
 
     // Define border style
-    const border = {
-      top: { style: 'thin' },
-      bottom: { style: 'thin' },
-      left: { style: 'thin' },
-      right: { style: 'thin' },
+    const border: { top: { style: BorderStyle }; bottom: { style: BorderStyle }; left: { style: BorderStyle }; right: { style: BorderStyle } } = {
+      top: { style: 'thin' as BorderStyle },
+      bottom: { style: 'thin' as BorderStyle },
+      left: { style: 'thin' as BorderStyle },
+      right: { style: 'thin' as BorderStyle },
     };
 
     // Apply borders to all rows

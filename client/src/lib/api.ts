@@ -39,7 +39,7 @@ export const api = {
   vehicles: {
     create: (name: string, zoneId: number) =>
       request<Vehicle>('/vehicles', { method: 'POST', body: JSON.stringify({ name, zoneId }) }),
-    update: (id: number, patch: Partial<Pick<Vehicle, 'name' | 'zoneId'>>) =>
+    update: (id: number, patch: Partial<Pick<Vehicle, 'name' | 'zoneId' | 'inRepair'>>) =>
       request<Vehicle>(`/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(patch) }),
     remove: (id: number) => request<void>(`/vehicles/${id}`, { method: 'DELETE' }),
   },

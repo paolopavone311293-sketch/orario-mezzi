@@ -105,7 +105,7 @@ export function VehiclesPage() {
           <tbody>
             {rows.map((row) => {
               const vehicle = row.vehicle;
-              const isInRepair = vehicle?.inRepair;
+              const isInRepair = !!vehicle?.inRepair;
               return (
                 <tr key={row.numero} className={`${vehicle ? 'has-data' : 'empty'} ${isInRepair ? 'in-repair' : ''}`}>
                   <td className="col-numero">{row.numero}</td>
@@ -146,10 +146,10 @@ export function VehiclesPage() {
                     <div className="names-list">
                       {vehicle && row.assigned.length > 0 ? (
                         row.assigned.map((p) => {
-                          const assignmentId = row.assignments.find((a) => a.personId === p.id)?.id;
+                          const assignmentId = row.assignments.find((a) => a.personId === p!.id)?.id;
                           return (
-                            <span key={p.id} className="name-item">
-                              {p.name}
+                            <span key={p!.id} className="name-item">
+                              {p!.name}
                               {assignmentId && (
                                 <button
                                   className="remove-name"

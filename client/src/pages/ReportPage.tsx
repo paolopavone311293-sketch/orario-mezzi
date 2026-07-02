@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import type { Zone, Vehicle } from '../lib/types';
+import type { Zone } from '../lib/types';
 import '../styles/report.css';
 
 export function ReportPage() {

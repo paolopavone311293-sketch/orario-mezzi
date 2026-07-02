@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { api } from '../lib/api';
-import { addDays, DAY_NAMES, formatDayLabel, getWeekDays, startOfWeek, toISODate } from '../lib/date';
+import { DAY_NAMES, formatDayLabel, getWeekDays, startOfWeek, toISODate } from '../lib/date';
 import type { Person } from '../lib/types';
 import '../styles/vacations.css';
 
@@ -18,7 +18,7 @@ export function VacationsPage() {
   const [selectedPerson, setSelectedPerson] = useState<number | null>(null);
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
+  const [weekStart] = useState(() => startOfWeek(new Date()));
 
   const weekDays = useMemo(() => getWeekDays(weekStart).slice(0, 5), [weekStart]);
   const start = toISODate(weekDays[0]);

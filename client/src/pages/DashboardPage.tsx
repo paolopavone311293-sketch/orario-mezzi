@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { toISODate } from '../lib/date';
-import type { Person, Zone, Vehicle, Assignment, AttendanceRecord } from '../lib/types';
+import type { Person, Zone, Assignment, AttendanceRecord } from '../lib/types';
 import '../styles/dashboard.css';
 
 export function DashboardPage() {

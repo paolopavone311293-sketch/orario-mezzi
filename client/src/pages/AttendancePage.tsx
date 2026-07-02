@@ -79,15 +79,6 @@ export function AttendancePage() {
     setPeople((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   const getDayAbbr = (dayIndex: number) => {
     return DAY_NAMES[dayIndex].slice(0, 3).toUpperCase();
   };
