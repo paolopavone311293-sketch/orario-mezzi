@@ -6,9 +6,14 @@ export const zonesRouter = Router();
 zonesRouter.get('/', (req, res) => {
   const zones = db.prepare('SELECT id, name FROM zones ORDER BY id').all();
   const vehicles = db.prepare('SELECT id, name, zone_id AS zoneId, in_repair AS inRepair FROM vehicles ORDER BY id').all();
+  const vehiclesByZone = {};
+  vehicles.forEach((v) => {
+    if (!vehiclesByZone[v.zoneId]) vehiclesByZone[v.zoneId] = [];
+    vehiclesByZone[v.zoneId].push(v);
+  });
   const result = zones.map((zone) => ({
     ...zone,
-    vehicles: vehicles.filter((v) => v.zoneId === zone.id),
+    vehicles: vehiclesByZone[zone.id] || [],
   }));
   res.json(result);
 });
