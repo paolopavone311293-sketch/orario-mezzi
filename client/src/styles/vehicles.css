@@ -89,11 +89,6 @@
 
 .vehicles-table tbody tr {
   flex: 1;
-  display: flex;
-}
-
-.vehicles-table tbody tr td {
-  flex: auto;
 }
 
 .vehicles-table td {
