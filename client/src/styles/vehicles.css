@@ -50,8 +50,7 @@
   background: white;
   border-radius: 12px;
   box-shadow: var(--shadow);
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow: hidden;
   padding: 0;
   margin: 0;
   flex: 1;
