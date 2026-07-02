@@ -64,6 +64,8 @@
   width: 100%;
   border-collapse: collapse;
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .vehicles-table th {
@@ -77,6 +79,21 @@
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+.vehicles-table tbody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.vehicles-table tbody tr {
+  flex: 1;
+  display: flex;
+}
+
+.vehicles-table tbody tr td {
+  flex: auto;
 }
 
 .vehicles-table td {
