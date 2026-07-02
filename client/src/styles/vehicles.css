@@ -1,9 +1,15 @@
 .vehicles-page {
   max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 24px;
 }
 
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .page-header h1 {
@@ -14,7 +20,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .date-selector {
@@ -45,15 +51,19 @@
   border-radius: 12px;
   box-shadow: var(--shadow);
   overflow-x: auto;
-  overflow-y: auto;
-  max-height: calc(34 * 30px + 48px);
+  overflow-y: visible;
   padding: 0;
   margin: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .vehicles-table {
   width: 100%;
   border-collapse: collapse;
+  flex: 1;
 }
 
 .vehicles-table th {

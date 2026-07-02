@@ -53,7 +53,14 @@ export function VehiclesPage() {
   const updateVehicleName = async (vehicleId: number, newName: string) => {
     if (!newName.trim()) return;
     try {
-      await api.vehicles.update(vehicleId, { name: newName });
+      if (vehicleId < 0) {
+        const firstZoneId = zones[0]?.id;
+        if (firstZoneId) {
+          await api.vehicles.create(newName, firstZoneId);
+        }
+      } else {
+        await api.vehicles.update(vehicleId, { name: newName });
+      }
       loadZones();
       setEditingVehicleId(null);
     } catch (err) {
@@ -110,7 +117,7 @@ export function VehiclesPage() {
                 <tr key={row.numero} className={`${vehicle ? 'has-data' : 'empty'} ${isInRepair ? 'in-repair' : ''}`}>
                   <td className="col-numero">{row.numero}</td>
                   <td className="col-targa">
-                    {vehicle && editingVehicleId === vehicle.id && editVehicles ? (
+                    {editingVehicleId === vehicle?.id && editVehicles ? (
                       <input
                         autoFocus
                         type="text"
@@ -118,13 +125,30 @@ export function VehiclesPage() {
                         onChange={(e) => setEditingVehicleName(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
-                            updateVehicleName(vehicle.id, editingVehicleName);
+                            updateVehicleName(vehicle!.id, editingVehicleName);
                           } else if (e.key === 'Escape') {
                             setEditingVehicleId(null);
                           }
                         }}
-                        onBlur={() => updateVehicleName(vehicle.id, editingVehicleName)}
+                        onBlur={() => updateVehicleName(vehicle!.id, editingVehicleName)}
                         className="vehicle-name-input"
+                      />
+                    ) : editingVehicleId === -row.numero && editVehicles ? (
+                      <input
+                        autoFocus
+                        type="text"
+                        value={editingVehicleName}
+                        onChange={(e) => setEditingVehicleName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            updateVehicleName(-row.numero, editingVehicleName);
+                          } else if (e.key === 'Escape') {
+                            setEditingVehicleId(null);
+                          }
+                        }}
+                        onBlur={() => updateVehicleName(-row.numero, editingVehicleName)}
+                        className="vehicle-name-input"
+                        placeholder="Nome targa..."
                       />
                     ) : vehicle ? (
                       <span
@@ -137,6 +161,16 @@ export function VehiclesPage() {
                         className={`editable-targa ${editVehicles ? 'editable' : 'disabled'}`}
                       >
                         {vehicle.name || '—'}
+                      </span>
+                    ) : editVehicles ? (
+                      <span
+                        onClick={() => {
+                          setEditingVehicleId(-row.numero);
+                          setEditingVehicleName('');
+                        }}
+                        className="editable-targa editable"
+                      >
+                        Aggiungi targa
                       </span>
                     ) : (
                       '—'
