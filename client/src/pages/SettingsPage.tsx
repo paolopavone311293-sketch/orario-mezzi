@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import type { Zone } from '../lib/types';
 import ExcelJS, { type BorderStyle } from 'exceljs';
 import '../styles/settings.css';
 
@@ -8,7 +7,8 @@ export function SettingsPage() {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
   useEffect(() => {
-    loadZones();
+    // Load zones data for export
+    api.zones.list();
   }, []);
 
   useEffect(() => {
@@ -20,11 +20,6 @@ export function SettingsPage() {
       localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
-
-  const loadZones = async () => {
-    const zonesData = await api.zones.list();
-    setZones(zonesData);
-  };
 
   // Export to Excel
   const exportToExcel = async () => {
