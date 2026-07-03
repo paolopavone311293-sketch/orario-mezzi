@@ -1,36 +1,80 @@
 import { Router } from 'express';
-import { db } from '../db.js';
+import { supabase } from '../db.js';
 
 export const vehiclesRouter = Router();
 
-vehiclesRouter.post('/', (req, res) => {
-  const { name, zoneId } = req.body;
-  if (!name || !name.trim() || !zoneId) {
-    return res.status(400).json({ error: 'name and zoneId are required' });
+vehiclesRouter.post('/', async (req, res) => {
+  try {
+    const { name, zoneId } = req.body;
+    if (!name || !name.trim() || !zoneId) {
+      return res.status(400).json({ error: 'name and zoneId are required' });
+    }
+
+    const { data: maxData, error: maxError } = await supabase
+      .from('vehicles')
+      .select('position')
+      .order('position', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (maxError && maxError.code !== 'PGRST116') throw maxError;
+    const maxPosition = maxData?.position || 0;
+    const nextPosition = maxPosition + 1;
+
+    const { data, error } = await supabase
+      .from('vehicles')
+      .insert([{ name: name.trim(), zone_id: Number(zoneId), position: nextPosition }])
+      .select('id, name, zone_id as zoneId, in_repair as inRepair, position');
+
+    if (error) throw error;
+    res.status(201).json(data[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  const maxPosition = db.prepare('SELECT MAX(position) AS max FROM vehicles').get().max || 0;
-  const nextPosition = maxPosition + 1;
-  const info = db.prepare('INSERT INTO vehicles (name, zone_id, position) VALUES (?, ?, ?)').run(name.trim(), Number(zoneId), nextPosition);
-  const vehicle = db
-    .prepare('SELECT id, name, zone_id AS zoneId, in_repair AS inRepair, position FROM vehicles WHERE id = ?')
-    .get(Number(info.lastInsertRowid));
-  res.status(201).json(vehicle);
 });
 
-vehiclesRouter.put('/:id', (req, res) => {
-  const { id } = req.params;
-  const { name, zoneId, inRepair } = req.body;
-  const existing = db.prepare('SELECT id, name, zone_id AS zoneId, in_repair AS inRepair FROM vehicles WHERE id = ?').get(Number(id));
-  if (!existing) return res.status(404).json({ error: 'not found' });
-  const nextName = name !== undefined ? name.trim() : existing.name;
-  const nextZoneId = zoneId !== undefined ? Number(zoneId) : existing.zoneId;
-  const nextInRepair = inRepair !== undefined ? Number(inRepair) : existing.inRepair;
-  db.prepare('UPDATE vehicles SET name = ?, zone_id = ?, in_repair = ? WHERE id = ?').run(nextName, nextZoneId, nextInRepair, Number(id));
-  res.json({ id: Number(id), name: nextName, zoneId: nextZoneId, inRepair: nextInRepair });
+vehiclesRouter.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, zoneId, inRepair } = req.body;
+
+    const { data: existing, error: fetchError } = await supabase
+      .from('vehicles')
+      .select('id, name, zone_id as zoneId, in_repair as inRepair')
+      .eq('id', Number(id))
+      .single();
+
+    if (fetchError) throw fetchError;
+    if (!existing) return res.status(404).json({ error: 'not found' });
+
+    const nextName = name !== undefined ? name.trim() : existing.name;
+    const nextZoneId = zoneId !== undefined ? Number(zoneId) : existing.zoneId;
+    const nextInRepair = inRepair !== undefined ? Boolean(inRepair) : existing.inRepair;
+
+    const { data, error } = await supabase
+      .from('vehicles')
+      .update({ name: nextName, zone_id: nextZoneId, in_repair: nextInRepair })
+      .eq('id', Number(id))
+      .select('id, name, zone_id as zoneId, in_repair as inRepair');
+
+    if (error) throw error;
+    res.json(data[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-vehiclesRouter.delete('/:id', (req, res) => {
-  const { id } = req.params;
-  db.prepare('DELETE FROM vehicles WHERE id = ?').run(Number(id));
-  res.status(204).send();
+vehiclesRouter.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from('vehicles')
+      .delete()
+      .eq('id', Number(id));
+
+    if (error) throw error;
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
