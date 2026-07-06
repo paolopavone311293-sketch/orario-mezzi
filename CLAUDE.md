@@ -25,6 +25,8 @@ Build client con `npm run build` → Express serve `client/dist` → singolo ser
 - Toggle P/A per ogni persona e giorno (settimana lavorativa)
 - Stato "A" (assente) **segue le stesse regole delle ferie**: rimuove le assegnazioni mezzi del giorno e sospende il default
 - **Modifica Nomi** attivabile da Impostazioni → cliccare sui nomi per rinominarli
+- Con Modifica Nomi disattivata: nascosti sia il modulo "Aggiungi persona" sia i pulsanti ✕ di rimozione
+- Navigazione settimana con frecce ‹ › grandi e data centrale, tutto su un'unica riga
 
 ### Zone e Mezzi
 - Assegnazione persone ai 34 mezzi organizzati per zona
@@ -41,6 +43,7 @@ Build client con `npm run build` → Express serve `client/dist` → singolo ser
 ### Ferie
 - Gestione periodi di ferie per persona
 - Rimuove le assegnazioni mezzi per la durata del periodo
+- Date visualizzate in formato compatto gg/mm/aa
 
 ### Impostazioni
 - 🎨 **Tema**: modalità chiara/scura
