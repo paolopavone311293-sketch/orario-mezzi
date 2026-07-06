@@ -25,16 +25,21 @@ export const EditContext = createContext<{
   setEditVehicles: (value: boolean) => void;
   editNames: boolean;
   setEditNames: (value: boolean) => void;
+  darkMode: boolean;
+  setDarkMode: (value: boolean) => void;
 }>({
   editVehicles: false,
   setEditVehicles: () => {},
   editNames: false,
   setEditNames: () => {},
+  darkMode: false,
+  setDarkMode: () => {},
 });
 
 function App() {
   const [editVehicles, setEditVehicles] = useState(false);
   const [editNames, setEditNames] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
   useEffect(() => {
     const url = import.meta.env.VITE_SUPABASE_URL;
@@ -47,9 +52,19 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
+
   return (
     <DialogProvider>
-      <EditContext.Provider value={{ editVehicles, setEditVehicles, editNames, setEditNames }}>
+      <EditContext.Provider value={{ editVehicles, setEditVehicles, editNames, setEditNames, darkMode, setDarkMode }}>
         <HashRouter>
           <div className="app">
             <Sidebar />

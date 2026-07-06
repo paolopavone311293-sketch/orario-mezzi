@@ -1,27 +1,16 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect } from 'react';
 import { api } from '../lib/api';
 import ExcelJS, { type BorderStyle } from 'exceljs';
 import { EditContext } from '../App';
 import '../styles/settings.css';
 
 export function SettingsPage() {
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
-  const { editVehicles, setEditVehicles, editNames, setEditNames } = useContext(EditContext);
+  const { editVehicles, setEditVehicles, editNames, setEditNames, darkMode, setDarkMode } = useContext(EditContext);
 
   useEffect(() => {
     // Load zones data for export
     api.zones.list();
   }, []);
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [darkMode]);
 
   // Export to Excel
   const exportToExcel = async () => {
