@@ -128,17 +128,19 @@ export function AttendancePage() {
           </button>
         </div>
 
-        <div className="add-person">
-          <input
-            placeholder="Nome nuova persona"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addPerson()}
-          />
-          <button className="primary" onClick={addPerson}>
-            Aggiungi
-          </button>
-        </div>
+        {editNames && (
+          <div className="add-person">
+            <input
+              placeholder="Nome nuova persona"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addPerson()}
+            />
+            <button className="primary" onClick={addPerson}>
+              Aggiungi
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="attendance-table-container">
@@ -215,9 +217,11 @@ export function AttendancePage() {
                   );
                 })}
                 <td className="action-cell">
-                  <button className="danger" onClick={() => removePerson(person.id)}>
-                    ✕
-                  </button>
+                  {editNames && (
+                    <button className="danger" onClick={() => removePerson(person.id)}>
+                      ✕
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

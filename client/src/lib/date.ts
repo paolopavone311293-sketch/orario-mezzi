@@ -32,3 +32,8 @@ export function formatDayLabel(d: Date): string {
 export function formatFullDate(d: Date): string {
   return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
+
+export function formatISOShort(iso: string): string {
+  const [year, month, day] = iso.split('-');
+  return `${day}/${month}/${year.slice(2)}`;
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { api } from '../lib/api';
-import { DAY_NAMES, formatDayLabel, getWeekDays, startOfWeek, toISODate, addDays } from '../lib/date';
+import { DAY_NAMES, formatDayLabel, formatISOShort, getWeekDays, startOfWeek, toISODate, addDays } from '../lib/date';
 import { useDialog } from '../components/DialogContext';
 import { ModernSelect } from '../components/ModernSelect';
 import { DatePicker } from '../components/DatePicker';
@@ -215,7 +215,7 @@ export function VacationsPage() {
                   <div key={vacation.id} className="vacation-item">
                     <div className="vacation-content">
                       <div className="vacation-dates">
-                        {vacation.dateStart} → {vacation.dateEnd}
+                        {formatISOShort(vacation.dateStart)} → {formatISOShort(vacation.dateEnd)}
                       </div>
                       <div className="vacation-days">
                         {getDaysCount(vacation.dateStart, vacation.dateEnd)} giorni

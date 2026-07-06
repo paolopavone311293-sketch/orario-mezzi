@@ -35,6 +35,14 @@
   box-shadow: var(--shadow);
 }
 
+.date-selector .datepicker {
+  width: auto;
+}
+
+.date-selector .datepicker-trigger {
+  width: auto;
+}
+
 .date-selector input[type='date'] {
   padding: 4px 8px;
   border: 1px solid var(--color-border);
