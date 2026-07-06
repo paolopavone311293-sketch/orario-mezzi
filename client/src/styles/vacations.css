@@ -34,6 +34,25 @@
   margin-bottom: 16px;
 }
 
+.vac-week-nav {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.vac-week-nav > button:not(.secondary) {
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  border: 1.5px solid var(--color-gray-200);
+}
+
+.vac-week-nav > div {
+  text-align: center;
+  grid-column: 2;
+}
+
 .week-table-container {
   overflow-x: auto;
   max-height: 500px;
@@ -197,8 +216,117 @@ button.full-width {
   font-style: italic;
 }
 
+/* Dark Mode */
+html[data-theme='dark'] .vac-week-nav > button:not(.secondary) {
+  background: #334155;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+
+html[data-theme='dark'] .vac-week-nav > button:not(.secondary):hover {
+  background: #475569;
+}
+
+html[data-theme='dark'] .selector-card,
+html[data-theme='dark'] .add-vacation-card,
+html[data-theme='dark'] .vacations-list-card,
+html[data-theme='dark'] .week-display-card {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+}
+
+html[data-theme='dark'] .selector-card h3,
+html[data-theme='dark'] .add-vacation-card h3,
+html[data-theme='dark'] .vacations-list-card h3,
+html[data-theme='dark'] .week-display-card h3 {
+  color: #f1f5f9;
+}
+
+html[data-theme='dark'] .week-table th {
+  background: var(--color-bg-light);
+  color: #cbd5e1;
+  border-bottom-color: var(--color-border);
+}
+
+html[data-theme='dark'] .week-table th .day-date {
+  color: #9ca3af;
+}
+
+html[data-theme='dark'] .week-table td {
+  border-bottom-color: var(--color-border);
+  color: var(--color-text);
+}
+
+html[data-theme='dark'] .week-table .name-col {
+  color: var(--color-text);
+}
+
+html[data-theme='dark'] .week-table tbody tr:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+html[data-theme='dark'] .form-group label {
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .days-info {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+
+html[data-theme='dark'] .vacation-item {
+  background: var(--color-bg-light);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+html[data-theme='dark'] .vacation-item:hover {
+  background: var(--color-bg);
+}
+
+html[data-theme='dark'] .vacation-dates {
+  color: #f1f5f9;
+}
+
+html[data-theme='dark'] .vacation-days {
+  color: #9ca3af;
+}
+
 @media (max-width: 768px) {
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .vac-week-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: auto;
+    gap: 8px;
+  }
+
+  .vac-week-nav > button:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .vac-week-nav > button:nth-child(3) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .vac-week-nav > div {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .vac-week-nav > button:nth-child(4) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .vac-week-nav > button {
+    padding: 8px 12px;
+    font-size: 12px;
+    width: 100%;
   }
 }

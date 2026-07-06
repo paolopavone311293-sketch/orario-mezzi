@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import ExcelJS, { type BorderStyle } from 'exceljs';
+import { EditContext } from '../App';
 import '../styles/settings.css';
 
 export function SettingsPage() {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  const { editVehicles, setEditVehicles, editNames, setEditNames } = useContext(EditContext);
 
   useEffect(() => {
     // Load zones data for export
@@ -114,16 +116,59 @@ export function SettingsPage() {
         <section className="settings-section">
           <h2>🎨 Tema</h2>
           <div className="theme-toggle">
-            <label className="toggle-label">
+            <label className="toggle-switch">
               <input
                 type="checkbox"
                 checked={darkMode}
                 onChange={(e) => setDarkMode(e.target.checked)}
               />
-              <span className="toggle-text">
-                {darkMode ? '🌙 Modalità scura' : '☀️ Modalità chiara'}
-              </span>
+              <span className="slider"></span>
             </label>
+            <span className="toggle-text">
+              {darkMode ? '🌙 Modalità scura' : '☀️ Modalità chiara'}
+            </span>
+          </div>
+        </section>
+
+        {/* Modifica Targhe */}
+        <section className="settings-section">
+          <h2>🚗 Mezzi</h2>
+          <p className="section-description">
+            Attiva la modifica per rinominare le targhe nella pagina Zone e Mezzi
+          </p>
+          <div className="theme-toggle">
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={editVehicles}
+                onChange={(e) => setEditVehicles(e.target.checked)}
+              />
+              <span className="slider"></span>
+            </label>
+            <span className="toggle-text">
+              {editVehicles ? '✏️ Modifica Targhe attiva' : 'Modifica Targhe'}
+            </span>
+          </div>
+        </section>
+
+        {/* Modifica Nomi */}
+        <section className="settings-section">
+          <h2>👥 Persone</h2>
+          <p className="section-description">
+            Attiva la modifica per rinominare le persone nella pagina Presenze
+          </p>
+          <div className="theme-toggle">
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={editNames}
+                onChange={(e) => setEditNames(e.target.checked)}
+              />
+              <span className="slider"></span>
+            </label>
+            <span className="toggle-text">
+              {editNames ? '✏️ Modifica Nomi attiva' : 'Modifica Nomi'}
+            </span>
           </div>
         </section>
 

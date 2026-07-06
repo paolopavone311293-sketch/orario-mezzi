@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import { toISODate } from '../lib/date';
+import { toISODate, formatFullDate } from '../lib/date';
 import type { Person, Zone, Assignment, AttendanceRecord } from '../lib/types';
 import '../styles/dashboard.css';
 
@@ -32,18 +32,10 @@ export function DashboardPage() {
     <div className="dashboard-page">
       <div className="page-header">
         <h1>Dashboard</h1>
-        <p className="subtitle">Panoramica della giornata di {toISODate(new Date())}</p>
+        <p className="subtitle">Panoramica della giornata di {formatFullDate(new Date())}</p>
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">👥</div>
-          <div className="stat-content">
-            <div className="stat-value">{totalPeople}</div>
-            <div className="stat-label">Totale Persone</div>
-          </div>
-        </div>
-
         <div className="stat-card highlight-success">
           <div className="stat-icon">✓</div>
           <div className="stat-content">
@@ -73,14 +65,6 @@ export function DashboardPage() {
           <div className="stat-content">
             <div className="stat-value">{vehiclesInRepair}</div>
             <div className="stat-label">Mezzi in Riparazione</div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">📋</div>
-          <div className="stat-content">
-            <div className="stat-value">{assignmentsToday}</div>
-            <div className="stat-label">Assegnazioni Oggi</div>
           </div>
         </div>
       </div>

@@ -1,17 +1,23 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 import { toISODate } from '../lib/date';
+import { useDialog } from '../components/DialogContext';
+import { ModernSelect } from '../components/ModernSelect';
+import { DatePicker } from '../components/DatePicker';
 import type { Assignment, AttendanceRecord, Person, Zone } from '../lib/types';
 import { EditContext } from '../App';
 import '../styles/vehicles.css';
 
 export function VehiclesPage() {
+  const dialog = useDialog();
   const { editVehicles } = useContext(EditContext);
   const [date, setDate] = useState(() => toISODate(new Date()));
   const [zones, setZones] = useState<Zone[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [defaultAssignments, setDefaultAssignments] = useState<Assignment[]>([]);
+  const [vacations, setVacations] = useState<{ personId: number; dateStart: string; dateEnd: string }[]>([]);
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
   const [editingVehicleName, setEditingVehicleName] = useState('');
 
@@ -22,11 +28,13 @@ export function VehiclesPage() {
   useEffect(() => {
     loadZones();
     api.people.list().then(setPeople);
+    api.assignments.defaults().then(setDefaultAssignments);
   }, []);
 
   useEffect(() => {
     api.attendance.range(date, date).then(setAttendance);
     api.assignments.forDate(date).then(setAssignments);
+    api.vacations.range(date, date).then(setVacations);
   }, [date]);
 
   const allVehicles = useMemo(() => {
@@ -39,16 +47,62 @@ export function VehiclesPage() {
     return vehicles.sort((a, b) => (a.position || 0) - (b.position || 0));
   }, [zones]);
 
+  // Persone non disponibili: in ferie oppure segnate assenti (A) — stesse regole
+  const unavailableIds = useMemo(() => {
+    const ids = new Set(
+      vacations
+        .filter((v) => v.dateStart <= date && date <= v.dateEnd)
+        .map((v) => v.personId)
+    );
+    attendance.forEach((a) => {
+      if (a.status === 'absent') ids.add(a.personId);
+    });
+    return ids;
+  }, [vacations, attendance, date]);
+
+  const defaultPersonByVehicle = useMemo(() => {
+    return new Map(defaultAssignments.map((a) => [a.vehicleId, a.personId]));
+  }, [defaultAssignments]);
+
+  // Persone già coperte oggi da un'assegnazione esplicita o da un default attivo (non in ferie, mezzo non in riparazione)
+  const effectivelyUsedPersonIds = useMemo(() => {
+    const used = new Set<number>();
+    allVehicles.forEach((v) => {
+      if (v.inRepair) return;
+      const explicit = assignments.filter((a) => a.vehicleId === v.id);
+      if (explicit.length > 0) {
+        explicit.forEach((a) => used.add(a.personId));
+        return;
+      }
+      const defaultPersonId = defaultPersonByVehicle.get(v.id);
+      if (defaultPersonId && !unavailableIds.has(defaultPersonId)) {
+        used.add(defaultPersonId);
+      }
+    });
+    return used;
+  }, [assignments, allVehicles, defaultPersonByVehicle, unavailableIds]);
+
   const presentPeople = useMemo(() => {
     const statusByPerson = new Map(attendance.map((a) => [a.personId, a.status]));
-    return people.filter((p) => (statusByPerson.get(p.id) ?? 'present') === 'present');
-  }, [people, attendance]);
+    return people.filter(
+      (p) => (statusByPerson.get(p.id) ?? 'present') === 'present' && !unavailableIds.has(p.id)
+    );
+  }, [people, attendance, unavailableIds]);
 
-  const getAssignedForVehicle = (vehicleId: number) => {
-    return assignments
-      .filter((a) => a.vehicleId === vehicleId)
-      .map((a) => people.find((p) => p.id === a.personId))
-      .filter(Boolean);
+  const getAssignedForVehicle = (vehicle: any) => {
+    if (vehicle.inRepair) return [];
+    const explicit = assignments.filter((a) => a.vehicleId === vehicle.id);
+    if (explicit.length > 0) {
+      return explicit
+        .map((a) => ({ person: people.find((p) => p.id === a.personId), assignmentId: a.id, defaultId: undefined as number | undefined }))
+        .filter((x) => x.person);
+    }
+    const defaultAssignment = defaultAssignments.find((a) => a.vehicleId === vehicle.id);
+    if (defaultAssignment && !unavailableIds.has(defaultAssignment.personId)) {
+      const person = people.find((p) => p.id === defaultAssignment.personId);
+      if (person) return [{ person, assignmentId: undefined as number | undefined, defaultId: defaultAssignment.id }];
+    }
+    return [];
   };
 
   const assignPerson = async (vehicleId: number, personId: number) => {
@@ -60,6 +114,20 @@ export function VehiclesPage() {
   const unassign = async (assignmentId: number) => {
     await api.assignments.remove(assignmentId);
     setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
+  };
+
+  const removeDefault = (defaultId: number) => {
+    dialog.confirm({
+      title: 'Rimuovi Assegnazione Fissa',
+      message: 'Il mezzo non avrà più una persona di default assegnata automaticamente ogni giorno.',
+      confirmText: 'Rimuovi',
+      cancelText: 'Annulla',
+      isDestructive: true,
+      onConfirm: async () => {
+        await api.assignments.remove(defaultId);
+        setDefaultAssignments((prev) => prev.filter((a) => a.id !== defaultId));
+      },
+    });
   };
 
   const updateVehicleName = async (vehicleId: number, newName: string) => {
@@ -86,8 +154,7 @@ export function VehiclesPage() {
     return {
       numero: i + 1,
       vehicle,
-      assigned: vehicle ? getAssignedForVehicle(vehicle.id) : [],
-      assignments: vehicle ? assignments.filter((a) => a.vehicleId === vehicle.id) : [],
+      assigned: vehicle ? getAssignedForVehicle(vehicle) : [],
     };
   });
 
@@ -100,12 +167,20 @@ export function VehiclesPage() {
 
       <div className="controls">
         <div className="date-selector">
-          <label>
-            <strong>Giorno:</strong>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </label>
+          <DatePicker value={date} onChange={setDate} />
           <button className="secondary" onClick={() => setDate(toISODate(new Date()))}>
             Oggi
+          </button>
+          <button
+            className="secondary"
+            onClick={() => {
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              if (tomorrow.getDay() === 0) tomorrow.setDate(tomorrow.getDate() + 1); // domenica → lunedì
+              setDate(toISODate(tomorrow));
+            }}
+          >
+            Domani
           </button>
         </div>
       </div>
@@ -114,7 +189,7 @@ export function VehiclesPage() {
         <table className="vehicles-table">
           <thead>
             <tr>
-              <th className="col-numero">Numero</th>
+              <th className="col-numero">N°</th>
               <th className="col-targa">Targa</th>
               <th className="col-nome">Nome</th>
             </tr>
@@ -187,40 +262,38 @@ export function VehiclesPage() {
                   <td className="col-nome">
                     <div className="names-list">
                       {vehicle && row.assigned.length > 0 ? (
-                        row.assigned.map((p) => {
-                          const assignmentId = row.assignments.find((a) => a.personId === p!.id)?.id;
-                          return (
-                            <span key={p!.id} className="name-item">
-                              {p!.name}
-                              {assignmentId && (
-                                <button
-                                  className="remove-name"
-                                  onClick={() => unassign(assignmentId)}
-                                >
-                                  ✕
-                                </button>
-                              )}
-                            </span>
-                          );
-                        })
+                        row.assigned.map(({ person, assignmentId, defaultId }) => (
+                          <span key={person!.id} className={`name-item ${defaultId ? 'is-default' : ''}`}>
+                            {person!.name}
+                            {assignmentId && (
+                              <button
+                                className="remove-name"
+                                onClick={() => unassign(assignmentId)}
+                              >
+                                ✕
+                              </button>
+                            )}
+                            {defaultId && (
+                              <button
+                                className="remove-name"
+                                title="Rimuovi assegnazione fissa"
+                                onClick={() => removeDefault(defaultId)}
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </span>
+                        ))
                       ) : vehicle ? (
-                        <select
-                          className="assign-select"
+                        <ModernSelect
                           value=""
-                          onChange={(e) => assignPerson(vehicle.id, Number(e.target.value))}
+                          onChange={(value) => assignPerson(vehicle.id, Number(value))}
                           disabled={isInRepair}
-                        >
-                          <option value="">
-                            {isInRepair ? 'Mezzo in riparazione' : 'Seleziona persona...'}
-                          </option>
-                          {!isInRepair && presentPeople
-                            .filter((p) => !assignments.some((a) => a.personId === p.id))
-                            .map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name}
-                              </option>
-                            ))}
-                        </select>
+                          placeholder={isInRepair ? 'Mezzo in riparazione' : 'Seleziona persona...'}
+                          options={!isInRepair ? presentPeople
+                            .filter((p) => !effectivelyUsedPersonIds.has(p.id))
+                            .map((p) => ({ value: String(p.id), label: p.name })) : []}
+                        />
                       ) : null}
                     </div>
                   </td>

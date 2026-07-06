@@ -7,9 +7,9 @@
   --color-success-bg: #d1fae5;
   --color-success-light: #6ee7b7;
 
-  --color-danger: #ef4444;
-  --color-danger-bg: #fee2e2;
-  --color-danger-light: #fca5a5;
+  --color-danger: #d00000;
+  --color-danger-bg: #ff8080;
+  --color-danger-light: #ff2222;
 
   --color-warning: #f59e0b;
   --color-warning-bg: #fef3c7;
@@ -255,11 +255,11 @@ table tbody tr:hover {
 
 /* Dark Mode */
 html[data-theme='dark'] {
-  --color-text: var(--color-gray-200);
-  --color-text-light: var(--color-gray-400);
-  --color-bg: #1f2937;
-  --color-bg-light: #111827;
-  --color-border: var(--color-gray-700);
+  --color-text: #e5e7eb;
+  --color-text-light: #9ca3af;
+  --color-bg: #1e293b;
+  --color-bg-light: #0f172a;
+  --color-border: #334155;
 }
 
 html[data-theme='dark'],
@@ -269,31 +269,48 @@ html[data-theme='dark'] body {
 }
 
 html[data-theme='dark'] .card,
-html[data-theme='dark'] .settings-section {
+html[data-theme='dark'] .settings-section,
+html[data-theme='dark'] .week-display-card,
+html[data-theme='dark'] .selector-card,
+html[data-theme='dark'] .add-vacation-card,
+html[data-theme='dark'] .vacations-list-card,
+html[data-theme='dark'] .attendance-table-container {
   background: var(--color-bg);
+  border-color: var(--color-border);
 }
 
 html[data-theme='dark'] input,
 html[data-theme='dark'] select,
 html[data-theme='dark'] textarea {
-  background: var(--color-bg);
+  background: #0f172a;
   color: var(--color-text);
   border-color: var(--color-border);
 }
 
+html[data-theme='dark'] input:focus,
+html[data-theme='dark'] select:focus,
+html[data-theme='dark'] textarea:focus {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+}
+
 html[data-theme='dark'] button.secondary {
-  background: var(--color-gray-800);
-  color: var(--color-gray-200);
-  border-color: var(--color-gray-700);
+  background: #334155;
+  color: #e2e8f0;
+  border-color: #475569;
 }
 
 html[data-theme='dark'] button.secondary:hover {
-  background: var(--color-gray-700);
+  background: #475569;
+}
+
+html[data-theme='dark'] button.primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
 html[data-theme='dark'] table th {
-  background: var(--color-gray-800);
-  color: var(--color-gray-200);
+  background: #0f172a;
+  color: #cbd5e1;
   border-bottom-color: var(--color-border);
 }
 
@@ -302,7 +319,7 @@ html[data-theme='dark'] table td {
 }
 
 html[data-theme='dark'] table tbody tr:hover {
-  background: var(--color-gray-800);
+  background: rgba(59, 130, 246, 0.1);
 }
 
 html[data-theme='dark'] .page-header,
@@ -314,9 +331,30 @@ html[data-theme='dark'] h3,
 html[data-theme='dark'] h4,
 html[data-theme='dark'] h5,
 html[data-theme='dark'] h6 {
-  color: var(--color-gray-100);
+  color: #f1f5f9;
 }
 
 html[data-theme='dark'] .app {
   background: var(--color-bg-light);
+}
+
+html[data-theme='dark'] .dialog-content {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+}
+
+html[data-theme='dark'] .dialog-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+html[data-theme='dark'] .status-btn.status-present {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+html[data-theme='dark'] .status-btn.status-absent {
+  background: rgba(208, 0, 0, 0.2);
+  color: #ff6666;
+  border-color: rgba(208, 0, 0, 0.3);
 }

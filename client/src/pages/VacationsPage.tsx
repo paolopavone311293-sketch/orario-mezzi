@@ -1,6 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { api } from '../lib/api';
-import { DAY_NAMES, formatDayLabel, getWeekDays, startOfWeek, toISODate } from '../lib/date';
+import { DAY_NAMES, formatDayLabel, getWeekDays, startOfWeek, toISODate, addDays } from '../lib/date';
+import { useDialog } from '../components/DialogContext';
+import { ModernSelect } from '../components/ModernSelect';
+import { DatePicker } from '../components/DatePicker';
 import type { Person } from '../lib/types';
 import '../styles/vacations.css';
 
@@ -12,17 +15,22 @@ interface Vacation {
 }
 
 export function VacationsPage() {
+  const dialog = useDialog();
   const [people, setPeople] = useState<Person[]>([]);
   const [vacations, setVacations] = useState<Vacation[]>([]);
   const [weekVacations, setWeekVacations] = useState<Vacation[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<number | null>(null);
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
-  const [weekStart] = useState(() => startOfWeek(new Date()));
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
 
   const weekDays = useMemo(() => getWeekDays(weekStart).slice(0, 5), [weekStart]);
   const start = toISODate(weekDays[0]);
   const end = toISODate(weekDays[4]);
+
+  const goToPreviousWeek = () => setWeekStart((prev) => addDays(prev, -7));
+  const goToToday = () => setWeekStart(startOfWeek(new Date()));
+  const goToNextWeek = () => setWeekStart((prev) => addDays(prev, 7));
 
   useEffect(() => {
     api.people.list().then(setPeople);
@@ -42,26 +50,34 @@ export function VacationsPage() {
 
   const addVacation = async () => {
     if (!selectedPerson || !dateStart || !dateEnd) {
-      alert('Seleziona persona, data inizio e data fine');
+      dialog.alert('Errore', 'Seleziona persona, data inizio e data fine');
       return;
     }
     if (dateEnd < dateStart) {
-      alert('La data fine deve essere successiva a quella di inizio');
+      dialog.alert('Errore', 'La data fine deve essere successiva a quella di inizio');
       return;
     }
-    await api.vacations.create(selectedPerson, dateStart, dateEnd);
-    setVacations((prev) => [
-      ...prev,
-      { id: Math.random(), personId: selectedPerson, dateStart, dateEnd },
-    ]);
+    const created = await api.vacations.create(selectedPerson, dateStart, dateEnd);
+    await api.assignments.removeForPersonInRange(selectedPerson, dateStart, dateEnd);
+    setVacations((prev) => [...prev, created]);
+    setWeekVacations((prev) => [...prev, created]);
     setDateStart('');
     setDateEnd('');
   };
 
-  const removeVacation = async (id: number) => {
-    if (!confirm('Rimuovere questo periodo di ferie?')) return;
-    await api.vacations.remove(id);
-    setVacations((prev) => prev.filter((v) => v.id !== id));
+  const removeVacation = (id: number) => {
+    dialog.confirm({
+      title: 'Rimuovi Ferie',
+      message: 'Sei sicuro di voler rimuovere questo periodo di ferie?',
+      confirmText: 'Rimuovi',
+      cancelText: 'Annulla',
+      isDestructive: true,
+      onConfirm: async () => {
+        await api.vacations.remove(id);
+        setVacations((prev) => prev.filter((v) => v.id !== id));
+        setWeekVacations((prev) => prev.filter((v) => v.id !== id));
+      },
+    });
   };
 
   const getDaysCount = (start: string, end: string) => {
@@ -98,7 +114,14 @@ export function VacationsPage() {
 
       <div className="vacations-container">
         <div className="week-display-card">
-          <h3>Settimana: {formatDayLabel(weekDays[0])} - {formatDayLabel(weekDays[4])}</h3>
+          <div className="vac-week-nav">
+            <button onClick={goToPreviousWeek}>← Precedente</button>
+            <div>
+              <h3>{formatDayLabel(weekDays[0])} - {formatDayLabel(weekDays[4])}</h3>
+            </div>
+            <button onClick={goToNextWeek}>Successiva →</button>
+            <button onClick={goToToday} className="secondary">Oggi</button>
+          </div>
           <div className="week-table-container">
             <table className="week-table">
               <thead>
@@ -142,17 +165,15 @@ export function VacationsPage() {
 
         <div className="selector-card">
           <h3>Seleziona Persona</h3>
-          <select
+          <ModernSelect
             value={selectedPerson || ''}
-            onChange={(e) => setSelectedPerson(e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">-- Scegli una persona --</option>
-            {people.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setSelectedPerson(value ? Number(value) : null)}
+            placeholder="-- Scegli una persona --"
+            options={[
+              { value: '', label: '-- Scegli una persona --' },
+              ...people.map((p) => ({ value: p.id, label: p.name })),
+            ]}
+          />
         </div>
 
         {selectedPerson && (
@@ -160,19 +181,17 @@ export function VacationsPage() {
             <h3>Aggiungi Periodo di Ferie</h3>
             <div className="form-grid">
               <div className="form-group">
-                <label>Data Inizio</label>
-                <input
-                  type="date"
+                <DatePicker
                   value={dateStart}
-                  onChange={(e) => setDateStart(e.target.value)}
+                  onChange={setDateStart}
+                  label="Data Inizio"
                 />
               </div>
               <div className="form-group">
-                <label>Data Fine</label>
-                <input
-                  type="date"
+                <DatePicker
                   value={dateEnd}
-                  onChange={(e) => setDateEnd(e.target.value)}
+                  onChange={setDateEnd}
+                  label="Data Fine"
                 />
               </div>
             </div>

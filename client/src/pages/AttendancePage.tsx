@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 import { addDays, DAY_NAMES, formatDayLabel, getWeekDays, startOfWeek, toISODate } from '../lib/date';
+import { useDialog } from '../components/DialogContext';
+import { EditContext } from '../App';
 import type { AttendanceRecord, Person } from '../lib/types';
 import '../styles/attendance.css';
 
@@ -12,11 +14,15 @@ interface Vacation {
 }
 
 export function AttendancePage() {
+  const dialog = useDialog();
+  const { editNames } = useContext(EditContext);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [people, setPeople] = useState<Person[]>([]);
   const [attendance, setAttendance] = useState<Record<string, AttendanceRecord['status']>>({});
   const [vacations, setVacations] = useState<Vacation[]>([]);
   const [newName, setNewName] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState('');
   const [loading, setLoading] = useState(false);
 
   const weekDays = useMemo(() => getWeekDays(weekStart).slice(0, 5), [weekStart]);
@@ -63,6 +69,10 @@ export function AttendancePage() {
     const next = current === 'present' ? 'absent' : 'present';
     setAttendance((prev) => ({ ...prev, [key(personId, date)]: next }));
     await api.attendance.set(personId, date, next);
+    // Assente segue le stesse regole delle ferie: via le assegnazioni mezzo del giorno
+    if (next === 'absent') {
+      await api.assignments.removeForPersonInRange(personId, date, date);
+    }
   };
 
   const addPerson = async () => {
@@ -73,10 +83,25 @@ export function AttendancePage() {
     setNewName('');
   };
 
-  const removePerson = async (id: number) => {
-    if (!confirm('Rimuovere questa persona?')) return;
-    await api.people.remove(id);
-    setPeople((prev) => prev.filter((p) => p.id !== id));
+  const removePerson = (id: number) => {
+    dialog.confirm({
+      title: 'Rimuovi Persona',
+      message: 'Sei sicuro di voler rimuovere questa persona?',
+      confirmText: 'Rimuovi',
+      cancelText: 'Annulla',
+      isDestructive: true,
+      onConfirm: async () => {
+        await api.people.remove(id);
+        setPeople((prev) => prev.filter((p) => p.id !== id));
+      },
+    });
+  };
+
+  const saveName = async (id: number, newName: string) => {
+    if (!newName.trim()) return;
+    await api.people.update(id, { name: newName });
+    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, name: newName } : p)));
+    setEditingId(null);
   };
 
   const getDayAbbr = (dayIndex: number) => {
@@ -92,17 +117,14 @@ export function AttendancePage() {
 
       <div className="controls">
         <div className="week-nav">
-          <button className="secondary" onClick={() => setWeekStart((w) => addDays(w, -7))}>
-            ← Settimana precedente
+          <button className="arrow-btn" onClick={() => setWeekStart((w) => addDays(w, -7))}>
+            ‹
           </button>
           <div className="week-label">
             <strong>{formatDayLabel(weekDays[0])} - {formatDayLabel(weekDays[4])}</strong>
           </div>
-          <button className="secondary" onClick={() => setWeekStart(startOfWeek(new Date()))}>
-            Oggi
-          </button>
-          <button className="secondary" onClick={() => setWeekStart((w) => addDays(w, 7))}>
-            Settimana successiva →
+          <button className="arrow-btn" onClick={() => setWeekStart((w) => addDays(w, 7))}>
+            ›
           </button>
         </div>
 
@@ -139,7 +161,41 @@ export function AttendancePage() {
               <tr key={person.id}>
                 <td className="number-cell">{index + 1}</td>
                 <td className="person-cell">
-                  <span>{person.name}</span>
+                  {editingId === person.id && editNames ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          saveName(person.id, editingName);
+                        } else if (e.key === 'Escape') {
+                          setEditingId(null);
+                        }
+                      }}
+                      onBlur={() => saveName(person.id, editingName)}
+                      style={{
+                        padding: '4px 8px',
+                        border: '1px solid var(--color-primary)',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit',
+                      }}
+                    />
+                  ) : (
+                    <span
+                      onClick={() => {
+                        if (editNames) {
+                          setEditingId(person.id);
+                          setEditingName(person.name);
+                        }
+                      }}
+                      style={editNames ? { cursor: 'pointer', textDecoration: 'underline' } : {}}
+                    >
+                      {person.name}
+                    </span>
+                  )}
                 </td>
                 {weekDays.map((d) => {
                   const date = toISODate(d);

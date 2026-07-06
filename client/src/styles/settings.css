@@ -152,18 +152,14 @@
   gap: 12px;
 }
 
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  user-select: none;
+/* Interruttori a slitta (stile Riparazioni) ma in blu per le impostazioni */
+.settings-section .toggle-switch input:checked + .slider,
+html[data-theme='dark'] .settings-section .toggle-switch input:checked + .slider {
+  background-color: var(--color-primary);
 }
 
-.toggle-label input[type='checkbox'] {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
+html[data-theme='dark'] .toggle-text {
+  color: var(--color-text);
 }
 
 .toggle-text {

@@ -17,6 +17,7 @@ export interface Vehicle {
   name: string;
   zoneId: number;
   inRepair: number;
+  position?: number;
 }
 
 export interface Zone {

@@ -4,7 +4,39 @@ import type { Assignment, AttendanceRecord, AttendanceStatus, Person, Vehicle, Z
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 
+console.log('🔧 Supabase URL:', supabaseUrl);
+console.log('🔧 Supabase Key:', supabaseKey ? '***' : 'UNDEFINED');
+
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+export const DEFAULT_ASSIGNMENT_DATE = '1900-01-01';
+
+// Persona di servizio (nascosta, active=false) usata come sentinella per
+// memorizzare la data di inizio riparazione dei mezzi nella tabella assignments,
+// visto che non è possibile aggiungere colonne allo schema con la chiave anon.
+const REPAIR_PERSON_NAME = '__RIPARAZIONE__';
+let repairPersonId: number | null = null;
+
+async function getRepairPersonId(): Promise<number> {
+  if (repairPersonId !== null) return repairPersonId;
+  const { data, error } = await supabase
+    .from('people')
+    .select('id')
+    .eq('name', REPAIR_PERSON_NAME)
+    .limit(1);
+  if (error) throw error;
+  if (data && data.length > 0) {
+    repairPersonId = data[0].id;
+    return repairPersonId!;
+  }
+  const { data: created, error: createError } = await supabase
+    .from('people')
+    .insert([{ name: REPAIR_PERSON_NAME, active: false }])
+    .select('id');
+  if (createError) throw createError;
+  repairPersonId = created[0].id;
+  return repairPersonId!;
+}
 
 export const api = {
   people: {
@@ -12,6 +44,7 @@ export const api = {
       const { data, error } = await supabase
         .from('people')
         .select('id, name, active')
+        .eq('active', true)
         .order('id');
       if (error) throw error;
       return data as Person[];
@@ -184,10 +217,12 @@ export const api = {
   },
   assignments: {
     forDate: async (date: string) => {
+      const repairId = await getRepairPersonId();
       const { data, error } = await supabase
         .from('assignments')
         .select('id, vehicle_id, person_id')
-        .eq('date', date);
+        .eq('date', date)
+        .neq('person_id', repairId);
       if (error) throw error;
       return (data || []).map(r => ({
         id: r.id,
@@ -213,6 +248,82 @@ export const api = {
     },
     remove: async (id: number) => {
       const { error } = await supabase.from('assignments').delete().eq('id', id);
+      if (error) throw error;
+    },
+    removeForPersonInRange: async (personId: number, dateStart: string, dateEnd: string) => {
+      const { error } = await supabase
+        .from('assignments')
+        .delete()
+        .eq('person_id', personId)
+        .gte('date', dateStart)
+        .lte('date', dateEnd);
+      if (error) throw error;
+    },
+    defaults: async () => {
+      const { data, error } = await supabase
+        .from('assignments')
+        .select('id, vehicle_id, person_id')
+        .eq('date', DEFAULT_ASSIGNMENT_DATE);
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id,
+        vehicleId: r.vehicle_id,
+        personId: r.person_id,
+      })) as Assignment[];
+    },
+    setDefault: async (vehicleId: number, personId: number) => {
+      await supabase
+        .from('assignments')
+        .delete()
+        .eq('date', DEFAULT_ASSIGNMENT_DATE)
+        .eq('vehicle_id', vehicleId);
+      const { data, error } = await supabase
+        .from('assignments')
+        .insert([{ date: DEFAULT_ASSIGNMENT_DATE, vehicle_id: vehicleId, person_id: personId }])
+        .select('id, vehicle_id, person_id');
+      if (error) throw error;
+      const r = data[0];
+      return {
+        id: r.id,
+        vehicleId: r.vehicle_id,
+        personId: r.person_id,
+      } as Assignment;
+    },
+  },
+  repairs: {
+    // Mappa vehicleId → data inizio riparazione (righe sentinella in assignments)
+    dates: async () => {
+      const repairId = await getRepairPersonId();
+      const { data, error } = await supabase
+        .from('assignments')
+        .select('vehicle_id, date')
+        .eq('person_id', repairId);
+      if (error) throw error;
+      const map: Record<number, string> = {};
+      (data || []).forEach((r: any) => {
+        map[r.vehicle_id] = r.date;
+      });
+      return map;
+    },
+    setDate: async (vehicleId: number, date: string) => {
+      const repairId = await getRepairPersonId();
+      await supabase
+        .from('assignments')
+        .delete()
+        .eq('person_id', repairId)
+        .eq('vehicle_id', vehicleId);
+      const { error } = await supabase
+        .from('assignments')
+        .insert([{ date, vehicle_id: vehicleId, person_id: repairId }]);
+      if (error) throw error;
+    },
+    clearDate: async (vehicleId: number) => {
+      const repairId = await getRepairPersonId();
+      const { error } = await supabase
+        .from('assignments')
+        .delete()
+        .eq('person_id', repairId)
+        .eq('vehicle_id', vehicleId);
       if (error) throw error;
     },
   },

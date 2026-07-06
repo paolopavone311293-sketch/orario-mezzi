@@ -29,12 +29,29 @@
   align-items: center;
 }
 
+.week-nav > button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 32px;
+  color: var(--color-primary);
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.week-nav > button:hover {
+  color: var(--color-primary-light);
+}
+
 .week-nav > button:nth-child(1) {
   grid-column: 1;
   grid-row: 1;
 }
 
-.week-nav > button:nth-child(4) {
+.week-nav > button:nth-child(3) {
   grid-column: 3;
   grid-row: 1;
 }
@@ -248,9 +265,71 @@
   color: var(--color-danger);
 }
 
+/* Dark Mode */
+html[data-theme='dark'] .week-nav {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+}
+
+html[data-theme='dark'] .week-label {
+  color: var(--color-primary-light);
+}
+
+html[data-theme='dark'] .add-person {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+}
+
+html[data-theme='dark'] .attendance-table-container {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+}
+
+html[data-theme='dark'] .attendance-table th {
+  background: var(--color-bg-light);
+  color: #cbd5e1;
+  border-bottom-color: var(--color-border);
+}
+
+html[data-theme='dark'] .day-name {
+  color: #9ca3af;
+}
+
+html[data-theme='dark'] .day-date {
+  color: var(--color-text);
+}
+
+html[data-theme='dark'] .number-cell {
+  color: #9ca3af;
+}
+
+html[data-theme='dark'] .person-cell {
+  background: var(--color-bg-light);
+  color: var(--color-text);
+}
+
+html[data-theme='dark'] .attendance-table tbody tr {
+  border-bottom-color: var(--color-border);
+}
+
+html[data-theme='dark'] .legend {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+html[data-theme='dark'] .legend-item {
+  color: var(--color-text);
+}
+
 @media (max-width: 1024px) {
   .week-nav {
+    display: flex;
     flex-direction: column;
+  }
+
+  .week-nav > button {
+    width: 100%;
   }
 
   .week-label {
