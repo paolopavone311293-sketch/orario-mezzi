@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Assignment, AttendanceRecord, AttendanceStatus, Person, Vehicle, Zone } from './types';
+import type { Assignment, AttendanceRecord, AttendanceStatus, Note, Person, Vehicle, Zone } from './types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
@@ -378,6 +378,39 @@ export const api = {
     },
     remove: async (id: number) => {
       const { error } = await supabase.from('vacations').delete().eq('id', id);
+      if (error) throw error;
+    },
+  },
+  notes: {
+    list: async () => {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('id, vehicle_id, text, created_at')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(n => ({
+        id: n.id,
+        vehicleId: n.vehicle_id,
+        text: n.text,
+        createdAt: n.created_at,
+      })) as Note[];
+    },
+    create: async (vehicleId: number, text: string) => {
+      const { data, error } = await supabase
+        .from('notes')
+        .insert([{ vehicle_id: vehicleId, text }])
+        .select('id, vehicle_id, text, created_at');
+      if (error) throw error;
+      const n = data[0];
+      return {
+        id: n.id,
+        vehicleId: n.vehicle_id,
+        text: n.text,
+        createdAt: n.created_at,
+      } as Note;
+    },
+    remove: async (id: number) => {
+      const { error } = await supabase.from('notes').delete().eq('id', id);
       if (error) throw error;
     },
   },

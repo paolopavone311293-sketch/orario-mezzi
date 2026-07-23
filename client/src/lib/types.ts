@@ -32,3 +32,10 @@ export interface Assignment {
   vehicleId: number;
   personId: number;
 }
+
+export interface Note {
+  id: number;
+  vehicleId: number;
+  text: string;
+  createdAt: string;
+}

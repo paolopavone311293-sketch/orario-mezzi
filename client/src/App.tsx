@@ -7,6 +7,7 @@ import './styles/attendance.css';
 import './styles/vehicles.css';
 import './styles/vacations.css';
 import './styles/report.css';
+import './styles/notes.css';
 import './styles/settings.css';
 import './styles/dialog.css';
 import './styles/select.css';
@@ -18,6 +19,7 @@ import { AttendancePage } from './pages/AttendancePage';
 import { VehiclesPage } from './pages/VehiclesPage';
 import { VacationsPage } from './pages/VacationsPage';
 import { ReportPage } from './pages/ReportPage';
+import { NotesPage } from './pages/NotesPage';
 import { SettingsPage } from './pages/SettingsPage';
 
 export const EditContext = createContext<{
@@ -75,6 +77,7 @@ function App() {
                 <Route path="/mezzi" element={<VehiclesPage />} />
                 <Route path="/ferie" element={<VacationsPage />} />
                 <Route path="/report" element={<ReportPage />} />
+                <Route path="/note" element={<NotesPage />} />
                 <Route path="/impostazioni" element={<SettingsPage />} />
               </Routes>
             </main>
