@@ -171,7 +171,7 @@ export function VacationsPage() {
             placeholder="-- Scegli una persona --"
             options={[
               { value: '', label: '-- Scegli una persona --' },
-              ...people.map((p) => ({ value: p.id, label: p.name })),
+              ...people.map((p, i) => ({ value: p.id, label: `${i + 1} · ${p.name}` })),
             ]}
           />
         </div>

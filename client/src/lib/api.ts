@@ -9,6 +9,13 @@ console.log('🔧 Supabase Key:', supabaseKey ? '***' : 'UNDEFINED');
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Prefisso tabelle: consente di far coesistere piu' istanze dell'app nello
+// stesso progetto Supabase. Vuoto (default) = app originale (tabelle people,
+// vehicles, ...). Impostato a build-time via VITE_TABLE_PREFIX (es. "app2_")
+// la seconda app usa un set di tabelle separato (app2_people, app2_vehicles, ...).
+const TABLE_PREFIX = import.meta.env.VITE_TABLE_PREFIX || '';
+const T = (name: string) => `${TABLE_PREFIX}${name}`;
+
 export const DEFAULT_ASSIGNMENT_DATE = '1900-01-01';
 
 // Persona di servizio (nascosta, active=false) usata come sentinella per
@@ -20,7 +27,7 @@ let repairPersonId: number | null = null;
 async function getRepairPersonId(): Promise<number> {
   if (repairPersonId !== null) return repairPersonId;
   const { data, error } = await supabase
-    .from('people')
+    .from(T('people'))
     .select('id')
     .eq('name', REPAIR_PERSON_NAME)
     .limit(1);
@@ -30,7 +37,7 @@ async function getRepairPersonId(): Promise<number> {
     return repairPersonId!;
   }
   const { data: created, error: createError } = await supabase
-    .from('people')
+    .from(T('people'))
     .insert([{ name: REPAIR_PERSON_NAME, active: false }])
     .select('id');
   if (createError) throw createError;
@@ -42,7 +49,7 @@ export const api = {
   people: {
     list: async () => {
       const { data, error } = await supabase
-        .from('people')
+        .from(T('people'))
         .select('id, name, active')
         .eq('active', true)
         .order('id');
@@ -51,7 +58,7 @@ export const api = {
     },
     create: async (name: string) => {
       const { data, error } = await supabase
-        .from('people')
+        .from(T('people'))
         .insert([{ name, active: true }])
         .select('id, name, active');
       if (error) throw error;
@@ -59,7 +66,7 @@ export const api = {
     },
     update: async (id: number, patch: Partial<Pick<Person, 'name' | 'active'>>) => {
       const { data, error } = await supabase
-        .from('people')
+        .from(T('people'))
         .update(patch)
         .eq('id', id)
         .select('id, name, active');
@@ -67,14 +74,14 @@ export const api = {
       return data[0] as Person;
     },
     remove: async (id: number) => {
-      const { error } = await supabase.from('people').delete().eq('id', id);
+      const { error } = await supabase.from(T('people')).delete().eq('id', id);
       if (error) throw error;
     },
   },
   attendance: {
     range: async (start: string, end: string) => {
       const { data, error } = await supabase
-        .from('attendance')
+        .from(T('attendance'))
         .select('id, person_id, date, status')
         .gte('date', start)
         .lte('date', end)
@@ -90,7 +97,7 @@ export const api = {
     },
     set: async (personId: number, date: string, status: AttendanceStatus) => {
       const { data, error } = await supabase
-        .from('attendance')
+        .from(T('attendance'))
         .upsert([{ person_id: personId, date, status }], { onConflict: 'person_id,date' })
         .select('id, person_id, date, status');
       if (error) throw error;
@@ -106,14 +113,14 @@ export const api = {
   zones: {
     list: async () => {
       const { data: zones, error: zonesError } = await supabase
-        .from('zones')
+        .from(T('zones'))
         .select('id, name')
         .order('id');
       if (zonesError) throw zonesError;
 
       const { data: vehicles, error: vehiclesError } = await supabase
-        .from('vehicles')
-        .select('id, name, zone_id, in_repair, position')
+        .from(T('vehicles'))
+        .select('id, name, zone_id, in_repair, position, code')
         .order('position');
       if (vehiclesError) throw vehiclesError;
 
@@ -126,6 +133,7 @@ export const api = {
           zoneId: v.zone_id,
           inRepair: v.in_repair,
           position: v.position,
+          code: v.code,
         });
       });
 
@@ -140,12 +148,13 @@ export const api = {
         zoneId: v.zone_id,
         inRepair: v.in_repair,
         position: v.position,
+        code: v.code,
       }));
       return result as Zone[];
     },
     create: async (name: string) => {
       const { data, error } = await supabase
-        .from('zones')
+        .from(T('zones'))
         .insert([{ name }])
         .select('id, name');
       if (error) throw error;
@@ -153,7 +162,7 @@ export const api = {
     },
     update: async (id: number, name: string) => {
       const { data, error } = await supabase
-        .from('zones')
+        .from(T('zones'))
         .update({ name })
         .eq('id', id)
         .select('id, name');
@@ -161,14 +170,14 @@ export const api = {
       return data[0] as Zone;
     },
     remove: async (id: number) => {
-      const { error } = await supabase.from('zones').delete().eq('id', id);
+      const { error } = await supabase.from(T('zones')).delete().eq('id', id);
       if (error) throw error;
     },
   },
   vehicles: {
     create: async (name: string, zoneId: number) => {
       const { data: maxData } = await supabase
-        .from('vehicles')
+        .from(T('vehicles'))
         .select('position')
         .order('position', { ascending: false })
         .limit(1)
@@ -176,7 +185,7 @@ export const api = {
       const maxPosition = maxData?.position || 0;
 
       const { data, error } = await supabase
-        .from('vehicles')
+        .from(T('vehicles'))
         .insert([{ name, zone_id: zoneId, position: maxPosition + 1 }])
         .select('id, name, zone_id, in_repair, position');
       if (error) throw error;
@@ -196,7 +205,7 @@ export const api = {
       if (patch.inRepair !== undefined) updateData.in_repair = patch.inRepair;
 
       const { data, error } = await supabase
-        .from('vehicles')
+        .from(T('vehicles'))
         .update(updateData)
         .eq('id', id)
         .select('id, name, zone_id, in_repair, position');
@@ -211,7 +220,7 @@ export const api = {
       } as Vehicle;
     },
     remove: async (id: number) => {
-      const { error } = await supabase.from('vehicles').delete().eq('id', id);
+      const { error } = await supabase.from(T('vehicles')).delete().eq('id', id);
       if (error) throw error;
     },
   },
@@ -219,7 +228,7 @@ export const api = {
     forDate: async (date: string) => {
       const repairId = await getRepairPersonId();
       const { data, error } = await supabase
-        .from('assignments')
+        .from(T('assignments'))
         .select('id, vehicle_id, person_id')
         .eq('date', date)
         .neq('person_id', repairId);
@@ -232,7 +241,7 @@ export const api = {
     },
     create: async (date: string, vehicleId: number, personId: number) => {
       const { data, error } = await supabase
-        .from('assignments')
+        .from(T('assignments'))
         .insert([{ date, vehicle_id: vehicleId, person_id: personId }])
         .select('id, vehicle_id, person_id');
       if (error) {
@@ -247,12 +256,12 @@ export const api = {
       } as Assignment;
     },
     remove: async (id: number) => {
-      const { error } = await supabase.from('assignments').delete().eq('id', id);
+      const { error } = await supabase.from(T('assignments')).delete().eq('id', id);
       if (error) throw error;
     },
     removeForPersonInRange: async (personId: number, dateStart: string, dateEnd: string) => {
       const { error } = await supabase
-        .from('assignments')
+        .from(T('assignments'))
         .delete()
         .eq('person_id', personId)
         .gte('date', dateStart)
@@ -261,7 +270,7 @@ export const api = {
     },
     defaults: async () => {
       const { data, error } = await supabase
-        .from('assignments')
+        .from(T('assignments'))
         .select('id, vehicle_id, person_id')
         .eq('date', DEFAULT_ASSIGNMENT_DATE);
       if (error) throw error;
@@ -273,12 +282,12 @@ export const api = {
     },
     setDefault: async (vehicleId: number, personId: number) => {
       await supabase
-        .from('assignments')
+        .from(T('assignments'))
         .delete()
         .eq('date', DEFAULT_ASSIGNMENT_DATE)
         .eq('vehicle_id', vehicleId);
       const { data, error } = await supabase
-        .from('assignments')
+        .from(T('assignments'))
         .insert([{ date: DEFAULT_ASSIGNMENT_DATE, vehicle_id: vehicleId, person_id: personId }])
         .select('id, vehicle_id, person_id');
       if (error) throw error;
@@ -295,7 +304,7 @@ export const api = {
     dates: async () => {
       const repairId = await getRepairPersonId();
       const { data, error } = await supabase
-        .from('assignments')
+        .from(T('assignments'))
         .select('vehicle_id, date')
         .eq('person_id', repairId);
       if (error) throw error;
@@ -308,19 +317,19 @@ export const api = {
     setDate: async (vehicleId: number, date: string) => {
       const repairId = await getRepairPersonId();
       await supabase
-        .from('assignments')
+        .from(T('assignments'))
         .delete()
         .eq('person_id', repairId)
         .eq('vehicle_id', vehicleId);
       const { error } = await supabase
-        .from('assignments')
+        .from(T('assignments'))
         .insert([{ date, vehicle_id: vehicleId, person_id: repairId }]);
       if (error) throw error;
     },
     clearDate: async (vehicleId: number) => {
       const repairId = await getRepairPersonId();
       const { error } = await supabase
-        .from('assignments')
+        .from(T('assignments'))
         .delete()
         .eq('person_id', repairId)
         .eq('vehicle_id', vehicleId);
@@ -330,7 +339,7 @@ export const api = {
   vacations: {
     range: async (start: string, end: string) => {
       const { data, error } = await supabase
-        .from('vacations')
+        .from(T('vacations'))
         .select('id, person_id, date_start, date_end')
         .order('date_start');
       if (error) throw error;
@@ -350,7 +359,7 @@ export const api = {
     },
     forPerson: async (personId: number) => {
       const { data, error } = await supabase
-        .from('vacations')
+        .from(T('vacations'))
         .select('id, person_id, date_start, date_end')
         .eq('person_id', personId)
         .order('date_start', { ascending: false });
@@ -364,7 +373,7 @@ export const api = {
     },
     create: async (personId: number, dateStart: string, dateEnd: string) => {
       const { data, error } = await supabase
-        .from('vacations')
+        .from(T('vacations'))
         .insert([{ person_id: personId, date_start: dateStart, date_end: dateEnd }])
         .select('id, person_id, date_start, date_end');
       if (error) throw error;
@@ -377,14 +386,14 @@ export const api = {
       };
     },
     remove: async (id: number) => {
-      const { error } = await supabase.from('vacations').delete().eq('id', id);
+      const { error } = await supabase.from(T('vacations')).delete().eq('id', id);
       if (error) throw error;
     },
   },
   notes: {
     list: async () => {
       const { data, error } = await supabase
-        .from('notes')
+        .from(T('notes'))
         .select('id, vehicle_id, text, created_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -397,7 +406,7 @@ export const api = {
     },
     create: async (vehicleId: number, text: string) => {
       const { data, error } = await supabase
-        .from('notes')
+        .from(T('notes'))
         .insert([{ vehicle_id: vehicleId, text }])
         .select('id, vehicle_id, text, created_at');
       if (error) throw error;
@@ -410,7 +419,7 @@ export const api = {
       } as Note;
     },
     remove: async (id: number) => {
-      const { error } = await supabase.from('notes').delete().eq('id', id);
+      const { error } = await supabase.from(T('notes')).delete().eq('id', id);
       if (error) throw error;
     },
   },

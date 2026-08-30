@@ -202,6 +202,12 @@
   color: white;
 }
 
+.status-btn.status-vacation {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning-light);
+}
+
 .status-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -252,6 +258,11 @@
 .badge-absent {
   background: var(--color-danger-bg);
   color: var(--color-danger);
+}
+
+.badge-vacation {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 
 /* Dark Mode */
@@ -322,16 +333,57 @@ html[data-theme='dark'] .legend-item {
 }
 
 @media (max-width: 768px) {
-  .person-cell {
-    min-width: 120px;
+  .attendance-table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .attendance-table th {
+    padding: 6px 2px;
+  }
+
+  .attendance-table th.number-header,
+  .attendance-table td.number-cell {
+    width: 20px;
+    min-width: 20px;
+    padding-left: 1px;
+    padding-right: 1px;
+    font-size: 11px;
+  }
+
+  .attendance-table td.person-cell {
+    min-width: 78px;
+    padding: 8px 5px;
+    gap: 6px;
+    overflow-wrap: break-word;
+    font-size: 11px;
   }
 
   .day-header {
-    min-width: 70px;
+    min-width: 32px;
+  }
+
+  .day-name {
+    font-size: 11px;
+  }
+
+  .day-date {
+    font-size: 11px;
+  }
+
+  .attendance-table td.status-cell {
+    padding: 4px 1px;
   }
 
   .status-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
     font-size: 12px;
+  }
+
+  .attendance-table td.action-cell {
+    padding: 2px;
   }
 
   .legend {

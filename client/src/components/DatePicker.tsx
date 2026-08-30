@@ -36,7 +36,9 @@ export function DatePicker({ value, onChange, label }: DatePickerProps) {
   };
 
   const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    // Settimana che inizia di lunedì: Lun=0 … Dom=6
+    const jsDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    return (jsDay + 6) % 7;
   };
 
   const handleDateClick = (day: number) => {
@@ -60,7 +62,7 @@ export function DatePicker({ value, onChange, label }: DatePickerProps) {
     'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
   ];
 
-  const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+  const dayNames = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
   const daysInMonth = getDaysInMonth(currentMonth);
   const firstDay = getFirstDayOfMonth(currentMonth);

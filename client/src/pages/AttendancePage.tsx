@@ -202,7 +202,11 @@ export function AttendancePage() {
                 {weekDays.map((d) => {
                   const date = toISODate(d);
                   const hasVacation = isVacation(person.id, date);
-                  const status = hasVacation ? 'absent' : (attendance[key(person.id, date)] ?? 'present');
+                  // In ferie: stesse regole dell'assenza, ma mostra "F" invece di "A"
+                  const status = hasVacation
+                    ? 'vacation'
+                    : (attendance[key(person.id, date)] ?? 'present');
+                  const label = status === 'present' ? 'P' : status === 'vacation' ? 'F' : 'A';
                   return (
                     <td key={date} className="status-cell">
                       <button
@@ -211,7 +215,7 @@ export function AttendancePage() {
                         onClick={() => toggle(person.id, date)}
                         title={hasVacation ? 'In ferie' : (status === 'present' ? 'Presente' : 'Assente')}
                       >
-                        {status === 'present' ? 'P' : 'A'}
+                        {label}
                       </button>
                     </td>
                   );
@@ -237,6 +241,10 @@ export function AttendancePage() {
         <div className="legend-item">
           <span className="legend-badge badge-absent">A</span>
           <span>Assente</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-badge badge-vacation">F</span>
+          <span>In ferie</span>
         </div>
       </div>
     </div>

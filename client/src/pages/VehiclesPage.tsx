@@ -148,8 +148,10 @@ export function VehiclesPage() {
     }
   };
 
-  // Crea array di 34 elementi (vuoti o con dati)
-  const rows = Array.from({ length: 34 }, (_, i) => {
+  // Numero di righe: almeno 34 (come l'app originale), oppure quante servono
+  // per mostrare tutti i mezzi presenti (la seconda app ne ha di piu').
+  const rowCount = Math.max(34, allVehicles.length);
+  const rows = Array.from({ length: rowCount }, (_, i) => {
     const vehicle = allVehicles[i];
     return {
       numero: i + 1,
@@ -200,7 +202,7 @@ export function VehiclesPage() {
               const isInRepair = !!vehicle?.inRepair;
               return (
                 <tr key={row.numero} className={`${vehicle ? 'has-data' : 'empty'} ${isInRepair ? 'in-repair' : ''}`}>
-                  <td className="col-numero">{row.numero}</td>
+                  <td className="col-numero">{row.vehicle?.code || row.numero}</td>
                   <td className="col-targa">
                     {editingVehicleId === vehicle?.id && editVehicles ? (
                       <input
