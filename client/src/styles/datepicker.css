@@ -66,8 +66,8 @@
 .datepicker-dropdown {
   position: absolute;
   top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  max-width: calc(100vw - 24px);
   margin-top: 6px;
   background: white;
   border: 1px solid var(--color-border);
