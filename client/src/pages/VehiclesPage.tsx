@@ -20,6 +20,7 @@ export function VehiclesPage() {
   const [vacations, setVacations] = useState<{ personId: number; dateStart: string; dateEnd: string }[]>([]);
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
   const [editingVehicleName, setEditingVehicleName] = useState('');
+  const [newVehicleName, setNewVehicleName] = useState('');
 
   const loadZones = () => api.zones.list().then((data: any) => {
     setZones(data.filter((z: any) => z.id !== undefined));
@@ -148,6 +149,23 @@ export function VehiclesPage() {
     }
   };
 
+  const addVehicle = async () => {
+    const name = newVehicleName.trim();
+    if (!name) return;
+    const zoneId = zones[0]?.id;
+    if (!zoneId) {
+      dialog.alert('Errore', 'Nessuna zona disponibile per aggiungere il mezzo');
+      return;
+    }
+    try {
+      await api.vehicles.create(name, zoneId);
+      setNewVehicleName('');
+      loadZones();
+    } catch (err) {
+      console.error('Error creating vehicle:', err);
+    }
+  };
+
   // Numero di righe: almeno 34 (come l'app originale), oppure quante servono
   // per mostrare tutti i mezzi presenti (la seconda app ne ha di piu').
   const rowCount = Math.max(34, allVehicles.length);
@@ -185,6 +203,20 @@ export function VehiclesPage() {
             Domani
           </button>
         </div>
+
+        {editVehicles && (
+          <div className="add-person">
+            <input
+              placeholder="Targa nuovo mezzo"
+              value={newVehicleName}
+              onChange={(e) => setNewVehicleName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addVehicle()}
+            />
+            <button className="primary" onClick={addVehicle}>
+              Aggiungi
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="table-container">
