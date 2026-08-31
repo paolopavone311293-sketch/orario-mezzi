@@ -423,4 +423,53 @@ export const api = {
       if (error) throw error;
     },
   },
+  revisioni: maintenanceApi('revisioni'),
+  tagliandi: maintenanceApi('tagliandi'),
+  settings: {
+    all: async () => {
+      const { data, error } = await supabase.from(T('settings')).select('key, value');
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data || []).forEach((r: any) => {
+        map[r.key] = r.value;
+      });
+      return map;
+    },
+    set: async (key: string, value: string) => {
+      const { error } = await supabase
+        .from(T('settings'))
+        .upsert([{ key, value }], { onConflict: 'key' });
+      if (error) throw error;
+    },
+  },
 };
+
+// Scadenza / km / tipo per mezzo (una riga per vehicle_id).
+// Usata da Revisioni (scadenza) e Tagliandi (km + tipo motorino/auto).
+function maintenanceApi(table: string) {
+  return {
+    list: async () => {
+      const { data, error } = await supabase.from(T(table)).select('vehicle_id, scadenza, km, tipo');
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        vehicleId: r.vehicle_id,
+        scadenza: r.scadenza as string | null,
+        km: r.km as number | null,
+        tipo: (r.tipo as string | null) || null,
+      }));
+    },
+    set: async (
+      vehicleId: number,
+      scadenza: string | null,
+      km: number | null,
+      tipo: string | null = null
+    ) => {
+      const { error } = await supabase
+        .from(T(table))
+        .upsert([{ vehicle_id: vehicleId, scadenza, km, tipo }], { onConflict: 'vehicle_id' });
+      if (error) throw error;
+    },
+  };
+}
+
+export type MaintenanceApi = ReturnType<typeof maintenanceApi>;

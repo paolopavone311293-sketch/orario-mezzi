@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import { toISODate, formatFullDate } from '../lib/date';
+import { toISODate, formatFullDate, formatISOShort } from '../lib/date';
 import type { Person, Zone, Assignment, AttendanceRecord, Vehicle } from '../lib/types';
 import '../styles/dashboard.css';
 
@@ -13,6 +13,9 @@ export function DashboardPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [defaultAssignments, setDefaultAssignments] = useState<Assignment[]>([]);
   const [vacations, setVacations] = useState<{ personId: number; dateStart: string; dateEnd: string }[]>([]);
+  const [revisioni, setRevisioni] = useState<{ vehicleId: number; scadenza: string | null; km: number | null }[]>([]);
+  const [tagliandi, setTagliandi] = useState<{ vehicleId: number; km: number | null; tipo: string | null }[]>([]);
+  const [limiti, setLimiti] = useState<Record<string, number>>({ motorino: 5000, auto: 20000 });
   const [selectedCard, setSelectedCard] = useState<CardKey | null>(null);
 
   const toggleCard = (k: CardKey) => setSelectedCard((cur) => (cur === k ? null : k));
@@ -27,6 +30,17 @@ export function DashboardPage() {
       api.assignments.forDate(today).then(setAssignments),
       api.assignments.defaults().then(setDefaultAssignments),
       api.vacations.range(today, today).then(setVacations),
+      api.revisioni.list().then(setRevisioni).catch(() => setRevisioni([])),
+      api.tagliandi.list().then(setTagliandi).catch(() => setTagliandi([])),
+      api.settings
+        .all()
+        .then((s) =>
+          setLimiti({
+            motorino: Number(s['tagliandi_limite_motorino']) || 5000,
+            auto: Number(s['tagliandi_limite_auto']) || 20000,
+          })
+        )
+        .catch(() => {}),
     ]);
   }, []);
 
@@ -85,6 +99,35 @@ export function DashboardPage() {
   const repairList = sortedVehicles
     .filter((v) => v.inRepair)
     .map((v) => ({ num: vehicleNumber.get(v.id)!, plate: v.name || 'senza targa' }));
+
+  // Revisioni in scadenza (entro 1 mese o scadute), più vicine prima
+  const vehicleByIdMap = new Map(allVehicles.map((v) => [v.id, v]));
+  const revScadenza = revisioni
+    .filter((r) => r.scadenza && vehicleByIdMap.has(r.vehicleId))
+    .map((r) => {
+      const today0 = new Date();
+      today0.setHours(0, 0, 0, 0);
+      const diff = Math.floor((new Date(r.scadenza as string).getTime() - today0.getTime()) / 86400000);
+      return { plate: vehicleByIdMap.get(r.vehicleId)?.name || 'senza targa', scadenza: r.scadenza as string, diff };
+    })
+    .filter((r) => r.diff <= 30)
+    .sort((a, b) => a.diff - b.diff);
+  const revUrgent = revScadenza.some((r) => r.diff <= 7);
+
+  // Tagliandi vicini al limite km (ultimi 20% o superato), meno km rimanenti prima
+  const tagliandiScadenza = tagliandi
+    .filter((t) => t.km !== null && vehicleByIdMap.has(t.vehicleId))
+    .map((t) => {
+      const limite = limiti[t.tipo === 'motorino' ? 'motorino' : 'auto'];
+      return {
+        plate: vehicleByIdMap.get(t.vehicleId)?.name || 'senza targa',
+        left: limite - (t.km as number),
+        limite,
+      };
+    })
+    .filter((t) => t.left <= t.limite * 0.2)
+    .sort((a, b) => a.left - b.left);
+  const tagUrgent = tagliandiScadenza.some((t) => t.left <= t.limite * 0.05);
 
   const detailTitle =
     selectedCard === 'present' ? `Presenti oggi (${presentList.length})` :
@@ -217,6 +260,20 @@ export function DashboardPage() {
         <div className="info-card">
           <h3>Avvisi Rapidi</h3>
           <div className="info-content">
+            {revScadenza.length > 0 && (
+              <div className={`alert ${revUrgent ? 'alert-danger' : 'alert-warning'}`}>
+                🔍 {revScadenza.length === 1 ? '1 revisione in scadenza' : `${revScadenza.length} revisioni in scadenza`}:{' '}
+                {revScadenza.map((r) => `${r.plate} (${formatISOShort(r.scadenza)})`).join(', ')}
+              </div>
+            )}
+            {tagliandiScadenza.length > 0 && (
+              <div className={`alert ${tagUrgent ? 'alert-danger' : 'alert-warning'}`}>
+                🧰 {tagliandiScadenza.length === 1 ? '1 tagliando in scadenza' : `${tagliandiScadenza.length} tagliandi in scadenza`}:{' '}
+                {tagliandiScadenza
+                  .map((t) => `${t.plate} (${t.left <= 0 ? 'superato' : `${t.left.toLocaleString('it-IT')} km`})`)
+                  .join(', ')}
+              </div>
+            )}
             {absentToday > 0 && (
               <div className="alert alert-warning">
                 ⚠️ {absentToday} {absentToday === 1 ? 'persona assente' : 'persone assenti'} oggi

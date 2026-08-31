@@ -72,6 +72,22 @@ export function Sidebar() {
             <span className="label">Riparazioni</span>
           </NavLink>
           <NavLink
+            to="/revisioni"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsOpen(false)}
+          >
+            <span className="icon">🔍</span>
+            <span className="label">Revisioni</span>
+          </NavLink>
+          <NavLink
+            to="/tagliandi"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsOpen(false)}
+          >
+            <span className="icon">🧰</span>
+            <span className="label">Tagliandi</span>
+          </NavLink>
+          <NavLink
             to="/note"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             onClick={() => setIsOpen(false)}

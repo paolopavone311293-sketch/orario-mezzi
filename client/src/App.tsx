@@ -8,6 +8,7 @@ import './styles/vehicles.css';
 import './styles/vacations.css';
 import './styles/report.css';
 import './styles/notes.css';
+import './styles/maintenance.css';
 import './styles/settings.css';
 import './styles/dialog.css';
 import './styles/select.css';
@@ -20,7 +21,9 @@ import { VehiclesPage } from './pages/VehiclesPage';
 import { VacationsPage } from './pages/VacationsPage';
 import { ReportPage } from './pages/ReportPage';
 import { NotesPage } from './pages/NotesPage';
+import { MaintenancePage } from './pages/MaintenancePage';
 import { SettingsPage } from './pages/SettingsPage';
+import { api } from './lib/api';
 
 export const EditContext = createContext<{
   editVehicles: boolean;
@@ -77,6 +80,28 @@ function App() {
                 <Route path="/mezzi" element={<VehiclesPage />} />
                 <Route path="/ferie" element={<VacationsPage />} />
                 <Route path="/report" element={<ReportPage />} />
+                <Route
+                  path="/revisioni"
+                  element={
+                    <MaintenancePage
+                      title="Revisioni"
+                      subtitle="Scadenza revisione per ogni mezzo"
+                      dataApi={api.revisioni}
+                      variant="date"
+                    />
+                  }
+                />
+                <Route
+                  path="/tagliandi"
+                  element={
+                    <MaintenancePage
+                      title="Tagliandi"
+                      subtitle="Km percorsi e km che mancano al prossimo tagliando"
+                      dataApi={api.tagliandi}
+                      variant="km"
+                    />
+                  }
+                />
                 <Route path="/note" element={<NotesPage />} />
                 <Route path="/impostazioni" element={<SettingsPage />} />
               </Routes>

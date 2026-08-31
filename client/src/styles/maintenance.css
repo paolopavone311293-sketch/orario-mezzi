@@ -1,0 +1,241 @@
+.maintenance-page {
+  max-width: 800px;
+}
+
+.limits-card {
+  display: flex;
+  gap: 16px;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.limit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 150px;
+}
+
+.limit-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+}
+
+.limit-field input {
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: white;
+  color: var(--color-text);
+}
+
+.limit-field input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.tipo-badge {
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tipo-badge.motorino {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--color-primary);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.km-left {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.km-left.none {
+  color: var(--color-text-light);
+  font-weight: 400;
+}
+
+.km-left.over {
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
+.maintenance-table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+
+.maintenance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.maintenance-table th {
+  background: linear-gradient(to right, #f8fafc, #f1f5f9);
+  padding: 10px 8px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-gray-700);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.maintenance-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.maintenance-table .col-numero {
+  width: 44px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--color-gray-600);
+}
+
+.maintenance-table th.col-numero {
+  text-align: center;
+}
+
+.maintenance-table .col-targa {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.maintenance-table .col-scadenza {
+  width: 160px;
+}
+
+.maintenance-table .col-km {
+  width: 90px;
+}
+
+.km-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: white;
+  color: var(--color-text);
+  box-sizing: border-box;
+}
+
+.km-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+/* Evidenziazione scadenza: giallo entro 1 mese, arancione entro 2 settimane,
+   rosso entro 1 settimana (o scaduta) */
+.maintenance-table tr.gialla td {
+  background: rgba(250, 204, 21, 0.18);
+}
+
+.maintenance-table tr.arancione td {
+  background: rgba(249, 115, 22, 0.18);
+}
+
+.maintenance-table tr.rossa td {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.maintenance-table tr.rossa .col-targa {
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
+/* Dark mode */
+html[data-theme='dark'] .maintenance-table-container,
+html[data-theme='dark'] .limits-card {
+  background: var(--color-bg);
+}
+
+html[data-theme='dark'] .limit-field label {
+  color: #cbd5e1;
+}
+
+html[data-theme='dark'] .limit-field input,
+html[data-theme='dark'] .tipo-badge {
+  background: var(--color-bg-light);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+html[data-theme='dark'] .tipo-badge.motorino {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+html[data-theme='dark'] .maintenance-table th {
+  background: var(--color-bg-light);
+  color: #cbd5e1;
+  border-bottom-color: var(--color-border);
+}
+
+html[data-theme='dark'] .maintenance-table td {
+  border-bottom-color: var(--color-border);
+  color: var(--color-text);
+}
+
+html[data-theme='dark'] .maintenance-table .col-numero {
+  color: #9ca3af;
+}
+
+html[data-theme='dark'] .km-input {
+  background: var(--color-bg-light);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+html[data-theme='dark'] .maintenance-table tr.gialla td {
+  background: rgba(250, 204, 21, 0.22);
+}
+
+html[data-theme='dark'] .maintenance-table tr.arancione td {
+  background: rgba(249, 115, 22, 0.24);
+}
+
+html[data-theme='dark'] .maintenance-table tr.rossa td {
+  background: rgba(239, 68, 68, 0.24);
+}
+
+@media (max-width: 768px) {
+  .maintenance-table {
+    font-size: 12px;
+  }
+
+  .maintenance-table th,
+  .maintenance-table td {
+    padding: 6px 4px;
+  }
+
+  .maintenance-table .col-numero {
+    width: 30px;
+  }
+
+  .maintenance-table .col-scadenza {
+    width: 130px;
+  }
+
+  .maintenance-table .col-km {
+    width: 64px;
+  }
+}
