@@ -9,7 +9,6 @@ type Tipo = 'motorino' | 'auto';
 
 interface Rec {
   scadenza: string | null;
-  km: number | null;
   tipo: Tipo;
 }
 
@@ -41,7 +40,6 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
       rows.forEach((r) => {
         map[r.vehicleId] = {
           scadenza: r.scadenza,
-          km: r.km,
           tipo: r.tipo === 'motorino' ? 'motorino' : 'auto',
         };
       });
@@ -57,13 +55,19 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
     }
   }, [dataApi, variant]);
 
-  const rec = (id: number): Rec => records[id] || { scadenza: null, km: null, tipo: 'auto' };
+  const rec = (id: number): Rec => records[id] || { scadenza: null, tipo: 'auto' };
+
+  /** I km sono una proprieta' del mezzo: condivisi tra Revisioni e Tagliandi */
+  const kmOf = (id: number): number | null => {
+    const v = vehicles.find((x) => x.id === id);
+    return v?.km ?? null;
+  };
 
   /** Km che mancano al prossimo tagliando (null se non ci sono km inseriti) */
   const rimanenti = (id: number): number | null => {
-    const r = rec(id);
-    if (r.km === null) return null;
-    return limits[r.tipo] - r.km;
+    const km = kmOf(id);
+    if (km === null) return null;
+    return limits[rec(id).tipo] - km;
   };
 
   const byPosition = useMemo(
@@ -104,15 +108,25 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
       return (a.position || 0) - (b.position || 0);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [byPosition, records, limits, variant]);
+  }, [byPosition, records, limits, variant, vehicles]);
 
   const save = async (id: number, patch: Partial<Rec>) => {
     const next: Rec = { ...rec(id), ...patch };
     setRecords((p) => ({ ...p, [id]: next }));
     try {
-      await dataApi.set(id, next.scadenza, next.km, next.tipo);
+      await dataApi.set(id, next.scadenza, null, next.tipo);
     } catch (err) {
       console.error('Errore salvataggio:', err);
+    }
+  };
+
+  const saveKm = async (id: number, value: string) => {
+    const km = value.trim() === '' ? null : Number(value);
+    setVehicles((prev) => prev.map((v) => (v.id === id ? { ...v, km } : v)));
+    try {
+      await api.vehicles.setKm(id, km);
+    } catch (err) {
+      console.error('Errore salvataggio km:', err);
     }
   };
 
@@ -232,17 +246,18 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
                     <input
                       type="number"
                       className="km-input"
-                      value={r.km ?? ''}
+                      value={kmOf(v.id) ?? ''}
                       placeholder="—"
                       onChange={(e) =>
-                        setRecords((p) => ({
-                          ...p,
-                          [v.id]: { ...rec(v.id), km: e.target.value === '' ? null : Number(e.target.value) },
-                        }))
+                        setVehicles((prev) =>
+                          prev.map((x) =>
+                            x.id === v.id
+                              ? { ...x, km: e.target.value === '' ? null : Number(e.target.value) }
+                              : x
+                          )
+                        )
                       }
-                      onBlur={(e) =>
-                        save(v.id, { km: e.target.value === '' ? null : Number(e.target.value) })
-                      }
+                      onBlur={(e) => saveKm(v.id, e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                       }}

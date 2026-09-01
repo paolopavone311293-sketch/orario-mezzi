@@ -120,7 +120,7 @@ export const api = {
 
       const { data: vehicles, error: vehiclesError } = await supabase
         .from(T('vehicles'))
-        .select('id, name, zone_id, in_repair, position, code')
+        .select('id, name, zone_id, in_repair, position, code, km')
         .order('position');
       if (vehiclesError) throw vehiclesError;
 
@@ -134,6 +134,7 @@ export const api = {
           inRepair: v.in_repair,
           position: v.position,
           code: v.code,
+          km: v.km,
         });
       });
 
@@ -149,6 +150,7 @@ export const api = {
         inRepair: v.in_repair,
         position: v.position,
         code: v.code,
+        km: v.km,
       }));
       return result as Zone[];
     },
@@ -218,6 +220,11 @@ export const api = {
         inRepair: v.in_repair,
         position: v.position,
       } as Vehicle;
+    },
+    // Km del mezzo: valore unico condiviso tra le pagine Revisioni e Tagliandi
+    setKm: async (id: number, km: number | null) => {
+      const { error } = await supabase.from(T('vehicles')).update({ km }).eq('id', id);
+      if (error) throw error;
     },
     remove: async (id: number) => {
       const { error } = await supabase.from(T('vehicles')).delete().eq('id', id);
