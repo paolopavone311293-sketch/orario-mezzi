@@ -63,7 +63,9 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
     }
   }, [dataApi, variant]);
 
-  const rec = (id: number): Rec => records[id] || { scadenza: null, km: null, tipo: 'auto' };
+  const VUOTO: Rec = { scadenza: null, km: null, tipo: 'auto' };
+  const recDa = (mappa: Record<number, Rec>, id: number): Rec => mappa[id] || VUOTO;
+  const rec = (id: number): Rec => recDa(records, id);
 
   /** I km sono una proprieta' del mezzo: condivisi tra Revisioni e Tagliandi */
   const kmOf = (id: number): number | null => {
@@ -310,7 +312,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
                             setRecords((prev) => ({
                               ...prev,
                               [v.id]: {
-                                ...rec(v.id),
+                                ...recDa(prev, v.id),
                                 km: e.target.value === '' ? null : Number(e.target.value),
                               },
                             }))
