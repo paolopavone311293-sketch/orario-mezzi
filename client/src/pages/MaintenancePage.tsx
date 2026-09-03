@@ -4,6 +4,7 @@ import type { MaintenanceApi } from '../lib/api';
 import { DatePicker } from '../components/DatePicker';
 import { useDialog } from '../components/DialogContext';
 import { formatISOShort, toISODate } from '../lib/date';
+import { kmMancanti } from '../lib/tagliandi';
 import type { Vehicle } from '../lib/types';
 import '../styles/maintenance.css';
 
@@ -80,7 +81,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
     const km = kmOf(id);
     if (km === null) return null;
     const r = rec(id);
-    return (r.km ?? 0) + limits[r.tipo] - km;
+    return kmMancanti(km, r.km, limits[r.tipo]);
   };
 
   const byPosition = useMemo(

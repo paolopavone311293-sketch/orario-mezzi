@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { toISODate, formatFullDate, formatISOShort } from '../lib/date';
+import { kmMancanti } from '../lib/tagliandi';
 import type { Person, Zone, Assignment, AttendanceRecord, Vehicle } from '../lib/types';
 import '../styles/dashboard.css';
 
@@ -14,7 +15,7 @@ export function DashboardPage() {
   const [defaultAssignments, setDefaultAssignments] = useState<Assignment[]>([]);
   const [vacations, setVacations] = useState<{ personId: number; dateStart: string; dateEnd: string }[]>([]);
   const [revisioni, setRevisioni] = useState<{ vehicleId: number; scadenza: string | null; km: number | null }[]>([]);
-  const [tagliandi, setTagliandi] = useState<{ vehicleId: number; tipo: string | null }[]>([]);
+  const [tagliandi, setTagliandi] = useState<{ vehicleId: number; km: number | null; tipo: string | null }[]>([]);
   const [limiti, setLimiti] = useState<Record<string, number>>({ motorino: 5000, auto: 20000 });
   const [selectedCard, setSelectedCard] = useState<CardKey | null>(null);
 
@@ -114,15 +115,17 @@ export function DashboardPage() {
     .sort((a, b) => a.diff - b.diff);
   const revUrgent = revScadenza.some((r) => r.diff <= 7);
 
-  // Tagliandi vicini al limite km (ultimi 20% o superato), meno km rimanenti prima
-  const tipoByVehicle = new Map(tagliandi.map((t) => [t.vehicleId, t.tipo]));
+  // Tagliandi vicini al limite km (ultimi 20% o superato), meno km rimanenti prima.
+  // Il conto parte dall'ultimo tagliando fatto, come nella pagina Tagliandi.
+  const tagliandoByVehicle = new Map(tagliandi.map((t) => [t.vehicleId, t]));
   const tagliandiScadenza = allVehicles
     .filter((v) => v.km !== null && v.km !== undefined)
     .map((v) => {
-      const limite = limiti[tipoByVehicle.get(v.id) === 'motorino' ? 'motorino' : 'auto'];
+      const t = tagliandoByVehicle.get(v.id);
+      const limite = limiti[t?.tipo === 'motorino' ? 'motorino' : 'auto'];
       return {
         plate: v.name || 'senza targa',
-        left: limite - (v.km as number),
+        left: kmMancanti(v.km as number, t?.km, limite),
         limite,
       };
     })
