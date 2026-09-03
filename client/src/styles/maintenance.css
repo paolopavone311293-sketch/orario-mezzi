@@ -310,21 +310,25 @@ html[data-theme='dark'] .fatto-btn {
     gap: 4px;
   }
 
-  /* Dove il tagliando non e' mai stato segnato la casella sarebbe vuota:
-     una riga di riquadri bianchi con dentro un trattino, per trentacinque
-     mezzi. Da telefono resta il solo tasto, e la casella compare quando
-     c'e' davvero un numero da leggere (o dopo aver premuto «Fatto»). */
+  /* La casella dell'ultimo tagliando si vede sempre, anche vuota: e' li'
+     che si scrive il numero a mano. Per non far sembrare la riga il doppio
+     di quello che serve e' bassa e stretta quanto basta. */
   .ultimo-cella .km-input {
     width: 100%;
+    padding: 3px 4px;
+    font-size: 13px;
     text-align: center;
   }
 
+  /* Vuota, la casella non deve gridare: resta un contorno tratteggiato che
+     dice 'qui si scrive'. Piena, torna un riquadro normale e si nota. */
   .ultimo-cella .km-input:placeholder-shown {
-    display: none;
+    background: transparent;
+    border-style: dashed;
   }
 
   .fatto-btn {
-    padding: 5px 8px;
+    padding: 4px 8px;
     font-size: 11px;
   }
 
@@ -333,11 +337,16 @@ html[data-theme='dark'] .fatto-btn {
     text-align: center;
   }
 
-  /* del tipo mezzo resta la sola icona, e l'intestazione si accorcia:
-     erano quelle due parole a tenere larga la colonna */
-  .tipo-parola,
-  .parola-lunga {
+  /* del tipo mezzo resta la sola icona: la parola non serve a capirlo */
+  .tipo-parola {
     display: none;
+  }
+
+  /* «Ultimo tagliando» si legge tutto, ma va a capo: scritto di fila
+     allargava la colonna e tornava a schiacciare la casella dei km */
+  .maintenance-table th.col-ultimo {
+    white-space: normal;
+    line-height: 1.15;
   }
 
   /* con la sola icona il tondo veniva una bolla: meglio un tasto squadrato */
