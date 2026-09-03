@@ -2,13 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 import type { MaintenanceApi } from '../lib/api';
 import { DatePicker } from '../components/DatePicker';
+import { useDialog } from '../components/DialogContext';
+import { formatISOShort, toISODate } from '../lib/date';
 import type { Vehicle } from '../lib/types';
 import '../styles/maintenance.css';
 
 type Tipo = 'motorino' | 'auto';
 
 interface Rec {
+  /** Revisioni: la data di scadenza. Tagliandi: il giorno dell'ultimo fatto. */
   scadenza: string | null;
+  /** Tagliandi: i km del contachilometri quando e' stato fatto l'ultimo. */
+  km: number | null;
   tipo: Tipo;
 }
 
@@ -29,6 +34,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [records, setRecords] = useState<Record<number, Rec>>({});
   const [limits, setLimits] = useState<Record<Tipo, number>>({ motorino: 5000, auto: 20000 });
+  const { confirm } = useDialog();
 
   useEffect(() => {
     api.zones.list().then((zones) => {
@@ -40,6 +46,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
       rows.forEach((r) => {
         map[r.vehicleId] = {
           scadenza: r.scadenza,
+          km: r.km,
           tipo: r.tipo === 'motorino' ? 'motorino' : 'auto',
         };
       });
@@ -55,7 +62,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
     }
   }, [dataApi, variant]);
 
-  const rec = (id: number): Rec => records[id] || { scadenza: null, tipo: 'auto' };
+  const rec = (id: number): Rec => records[id] || { scadenza: null, km: null, tipo: 'auto' };
 
   /** I km sono una proprieta' del mezzo: condivisi tra Revisioni e Tagliandi */
   const kmOf = (id: number): number | null => {
@@ -63,11 +70,17 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
     return v?.km ?? null;
   };
 
-  /** Km che mancano al prossimo tagliando (null se non ci sono km inseriti) */
+  /**
+   * Km che mancano al prossimo tagliando: si contano da quelli segnati
+   * all'ultimo tagliando fatto, non da zero. Finche' non ne e' stato
+   * registrato nessuno si parte dall'inizio, come prima.
+   * null quando i km del mezzo non sono stati scritti.
+   */
   const rimanenti = (id: number): number | null => {
     const km = kmOf(id);
     if (km === null) return null;
-    return limits[rec(id).tipo] - km;
+    const r = rec(id);
+    return (r.km ?? 0) + limits[r.tipo] - km;
   };
 
   const byPosition = useMemo(
@@ -114,7 +127,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
     const next: Rec = { ...rec(id), ...patch };
     setRecords((p) => ({ ...p, [id]: next }));
     try {
-      await dataApi.set(id, next.scadenza, null, next.tipo);
+      await dataApi.set(id, next.scadenza, next.km, next.tipo);
     } catch (err) {
       console.error('Errore salvataggio:', err);
     }
@@ -128,6 +141,24 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
     } catch (err) {
       console.error('Errore salvataggio km:', err);
     }
+  };
+
+  /**
+   * «Fatto»: segna il tagliando ai km che il mezzo ha adesso e fa ripartire
+   * il conteggio da li'. La data serve solo a ricordarsi quando e' stato.
+   */
+  const segnaTagliando = (v: Vehicle) => {
+    const km = kmOf(v.id);
+    if (km === null) return;
+    const prossimo = km + limits[rec(v.id).tipo];
+    confirm({
+      title: 'Tagliando fatto',
+      message:
+        `${v.name || 'Mezzo'}: segno il tagliando a ${km.toLocaleString('it-IT')} km. ` +
+        `Il conteggio riparte da qui, il prossimo tocca a ${prossimo.toLocaleString('it-IT')} km.`,
+      confirmText: 'Sì, fatto',
+      onConfirm: () => save(v.id, { km, scadenza: toISODate(new Date()) }),
+    });
   };
 
   const saveLimit = async (tipo: Tipo, value: string) => {
@@ -211,6 +242,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
               {isKm && <th className="col-tipo">Tipo</th>}
               {!isKm && <th className="col-scadenza">Scadenza</th>}
               <th className="col-km">Km</th>
+              {isKm && <th className="col-ultimo">Ultimo tagliando</th>}
               {isKm && <th className="col-rimanenti">Mancano</th>}
             </tr>
           </thead>
@@ -263,6 +295,49 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
                       }}
                     />
                   </td>
+
+                  {isKm && (
+                    <td className="col-ultimo">
+                      <div className="ultimo-cella">
+                        <input
+                          type="number"
+                          className="km-input"
+                          value={r.km ?? ''}
+                          placeholder="—"
+                          title="Km segnati quando è stato fatto l'ultimo tagliando"
+                          onChange={(e) =>
+                            setRecords((prev) => ({
+                              ...prev,
+                              [v.id]: {
+                                ...rec(v.id),
+                                km: e.target.value === '' ? null : Number(e.target.value),
+                              },
+                            }))
+                          }
+                          onBlur={(e) =>
+                            save(v.id, { km: e.target.value === '' ? null : Number(e.target.value) })
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="fatto-btn"
+                          disabled={kmOf(v.id) === null}
+                          onClick={() => segnaTagliando(v)}
+                          title={
+                            kmOf(v.id) === null
+                              ? 'Prima scrivi i km del mezzo'
+                              : 'Segna il tagliando fatto adesso'
+                          }
+                        >
+                          ✅ Fatto
+                        </button>
+                      </div>
+                      {r.scadenza && <span className="ultimo-data">{formatISOShort(r.scadenza)}</span>}
+                    </td>
+                  )}
 
                   {isKm && (
                     <td className="col-rimanenti">
