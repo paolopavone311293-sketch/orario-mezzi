@@ -245,7 +245,11 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
               {isKm && <th className="col-tipo">Tipo</th>}
               {!isKm && <th className="col-scadenza">Scadenza</th>}
               <th className="col-km">Km</th>
-              {isKm && <th className="col-ultimo">Ultimo tagliando</th>}
+              {isKm && (
+                <th className="col-ultimo">
+                  Ultimo<span className="parola-lunga"> tagliando</span>
+                </th>
+              )}
               {isKm && <th className="col-rimanenti">Mancano</th>}
             </tr>
           </thead>
@@ -266,7 +270,8 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
                         onClick={() => save(v.id, { tipo: r.tipo === 'auto' ? 'motorino' : 'auto' })}
                         title="Clicca per cambiare tipo"
                       >
-                        {r.tipo === 'motorino' ? '🛵 Motorino' : '🚗 Auto'}
+                        {r.tipo === 'motorino' ? '🛵' : '🚗'}
+                        <span className="tipo-parola">{r.tipo === 'motorino' ? ' Motorino' : ' Auto'}</span>
                       </button>
                     </td>
                   )}
