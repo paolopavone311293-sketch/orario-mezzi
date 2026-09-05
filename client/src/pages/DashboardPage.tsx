@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { toISODate, formatFullDate, formatISOShort } from '../lib/date';
-import { kmMancanti } from '../lib/tagliandi';
+import { kmMancanti, pianiDaImpostazioni, tipoValido, trattoDiRiferimento, PIANI_PREDEFINITI } from '../lib/tagliandi';
+import type { Piano, TipoMezzo } from '../lib/tagliandi';
 import type { Person, Zone, Assignment, AttendanceRecord, Vehicle } from '../lib/types';
 import '../styles/dashboard.css';
 
@@ -16,7 +17,7 @@ export function DashboardPage() {
   const [vacations, setVacations] = useState<{ personId: number; dateStart: string; dateEnd: string }[]>([]);
   const [revisioni, setRevisioni] = useState<{ vehicleId: number; scadenza: string | null; km: number | null }[]>([]);
   const [tagliandi, setTagliandi] = useState<{ vehicleId: number; km: number | null; tipo: string | null }[]>([]);
-  const [limiti, setLimiti] = useState<Record<string, number>>({ motorino: 5000, auto: 20000 });
+  const [piani, setPiani] = useState<Record<TipoMezzo, Piano>>(PIANI_PREDEFINITI);
   const [selectedCard, setSelectedCard] = useState<CardKey | null>(null);
 
   const toggleCard = (k: CardKey) => setSelectedCard((cur) => (cur === k ? null : k));
@@ -35,12 +36,7 @@ export function DashboardPage() {
       api.tagliandi.list().then(setTagliandi).catch(() => setTagliandi([])),
       api.settings
         .all()
-        .then((s) =>
-          setLimiti({
-            motorino: Number(s['tagliandi_limite_motorino']) || 5000,
-            auto: Number(s['tagliandi_limite_auto']) || 20000,
-          })
-        )
+        .then((s) => setPiani(pianiDaImpostazioni(s)))
         .catch(() => {}),
     ]);
   }, []);
@@ -122,11 +118,12 @@ export function DashboardPage() {
     .filter((v) => v.km !== null && v.km !== undefined)
     .map((v) => {
       const t = tagliandoByVehicle.get(v.id);
-      const limite = limiti[t?.tipo === 'motorino' ? 'motorino' : 'auto'];
+      const piano = piani[tipoValido(t?.tipo)];
       return {
         plate: v.name || 'senza targa',
-        left: kmMancanti(v.km as number, t?.km, limite),
-        limite,
+        left: kmMancanti(v.km as number, t?.km, piano),
+        // il tratto in corso: prima del primo tagliando e' piu' corto di quelli dopo
+        limite: trattoDiRiferimento(t?.km, piano),
       };
     })
     .filter((t) => t.left <= t.limite * 0.2)

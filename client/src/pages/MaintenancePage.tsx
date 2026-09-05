@@ -4,11 +4,24 @@ import type { MaintenanceApi } from '../lib/api';
 import { DatePicker } from '../components/DatePicker';
 import { useDialog } from '../components/DialogContext';
 import { formatISOShort, toISODate } from '../lib/date';
-import { kmMancanti } from '../lib/tagliandi';
+import {
+  CHIAVI,
+  PIANI_PREDEFINITI,
+  TIPI,
+  etichettaTipo,
+  iconaTipo,
+  kmMancanti,
+  pianiDaImpostazioni,
+  prossimoTagliando,
+  tipoSuccessivo,
+  tipoValido,
+  trattoDiRiferimento,
+} from '../lib/tagliandi';
+import type { Piano, TipoMezzo } from '../lib/tagliandi';
 import type { Vehicle } from '../lib/types';
 import '../styles/maintenance.css';
 
-type Tipo = 'motorino' | 'auto';
+type Tipo = TipoMezzo;
 
 interface Rec {
   /** Revisioni: la data di scadenza. Tagliandi: il giorno dell'ultimo fatto. */
@@ -26,15 +39,10 @@ interface MaintenancePageProps {
   variant: 'date' | 'km';
 }
 
-const LIMIT_KEYS: Record<Tipo, string> = {
-  motorino: 'tagliandi_limite_motorino',
-  auto: 'tagliandi_limite_auto',
-};
-
 export function MaintenancePage({ title, subtitle, dataApi, variant }: MaintenancePageProps) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [records, setRecords] = useState<Record<number, Rec>>({});
-  const [limits, setLimits] = useState<Record<Tipo, number>>({ motorino: 5000, auto: 20000 });
+  const [piani, setPiani] = useState<Record<Tipo, Piano>>(PIANI_PREDEFINITI);
   const { confirm } = useDialog();
 
   useEffect(() => {
@@ -48,18 +56,13 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
         map[r.vehicleId] = {
           scadenza: r.scadenza,
           km: r.km,
-          tipo: r.tipo === 'motorino' ? 'motorino' : 'auto',
+          tipo: tipoValido(r.tipo),
         };
       });
       setRecords(map);
     });
     if (variant === 'km') {
-      api.settings.all().then((s) => {
-        setLimits({
-          motorino: Number(s[LIMIT_KEYS.motorino]) || 5000,
-          auto: Number(s[LIMIT_KEYS.auto]) || 20000,
-        });
-      });
+      api.settings.all().then((s) => setPiani(pianiDaImpostazioni(s)));
     }
   }, [dataApi, variant]);
 
@@ -74,16 +77,15 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
   };
 
   /**
-   * Km che mancano al prossimo tagliando: si contano da quelli segnati
-   * all'ultimo tagliando fatto, non da zero. Finche' non ne e' stato
-   * registrato nessuno si parte dall'inizio, come prima.
+   * Km che mancano al prossimo tagliando: si contano dall'ultimo fatto, e
+   * finche' non ce n'e' uno si conta verso il primo tagliando del tipo.
    * null quando i km del mezzo non sono stati scritti.
    */
   const rimanenti = (id: number): number | null => {
     const km = kmOf(id);
     if (km === null) return null;
     const r = rec(id);
-    return kmMancanti(km, r.km, limits[r.tipo]);
+    return kmMancanti(km, r.km, piani[r.tipo]);
   };
 
   const byPosition = useMemo(
@@ -124,7 +126,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
       return (a.position || 0) - (b.position || 0);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [byPosition, records, limits, variant, vehicles]);
+  }, [byPosition, records, piani, variant, vehicles]);
 
   const save = async (id: number, patch: Partial<Rec>) => {
     const next: Rec = { ...rec(id), ...patch };
@@ -153,7 +155,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
   const segnaTagliando = (v: Vehicle) => {
     const km = kmOf(v.id);
     if (km === null) return;
-    const prossimo = km + limits[rec(v.id).tipo];
+    const prossimo = prossimoTagliando(km, piani[rec(v.id).tipo]);
     confirm({
       title: 'Tagliando fatto',
       message:
@@ -164,14 +166,15 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
     });
   };
 
-  const saveLimit = async (tipo: Tipo, value: string) => {
+  /** I km di un tipo di mezzo: 'primo' = primo tagliando, 'ogni' = i seguenti */
+  const salvaPiano = async (tipo: Tipo, quale: 'primo' | 'ogni', value: string) => {
     const n = Number(value);
     if (!n || n <= 0) return;
-    setLimits((p) => ({ ...p, [tipo]: n }));
+    setPiani((p) => ({ ...p, [tipo]: { ...p[tipo], [quale]: n } }));
     try {
-      await api.settings.set(LIMIT_KEYS[tipo], String(n));
+      await api.settings.set(CHIAVI[tipo][quale], String(n));
     } catch (err) {
-      console.error('Errore salvataggio limite:', err);
+      console.error('Errore salvataggio km del tipo:', err);
     }
   };
 
@@ -187,14 +190,15 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
     return '';
   };
 
-  /** Colore riga in base ai km che mancano, in proporzione al limite del tipo */
+  /** Colore riga in base ai km che mancano, in proporzione al tratto in corso */
   const kmClass = (id: number) => {
     const left = rimanenti(id);
     if (left === null) return '';
-    const limit = limits[rec(id).tipo];
-    if (left <= limit * 0.05) return 'rossa'; // ultimi 5% o superato
-    if (left <= limit * 0.1) return 'arancione'; // ultimi 10%
-    if (left <= limit * 0.2) return 'gialla'; // ultimi 20%
+    const r = rec(id);
+    const tratto = trattoDiRiferimento(r.km, piani[r.tipo]);
+    if (left <= tratto * 0.05) return 'rossa'; // ultimi 5% o superato
+    if (left <= tratto * 0.1) return 'arancione'; // ultimi 10%
+    if (left <= tratto * 0.2) return 'gialla'; // ultimi 20%
     return '';
   };
 
@@ -209,30 +213,37 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
 
       {isKm && (
         <div className="limits-card">
-          <div className="limit-field">
-            <label>🛵 Limite motorini (km)</label>
-            <input
-              type="number"
-              defaultValue={limits.motorino}
-              key={`m-${limits.motorino}`}
-              onBlur={(e) => saveLimit('motorino', e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-              }}
-            />
-          </div>
-          <div className="limit-field">
-            <label>🚗 Limite auto (km)</label>
-            <input
-              type="number"
-              defaultValue={limits.auto}
-              key={`a-${limits.auto}`}
-              onBlur={(e) => saveLimit('auto', e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-              }}
-            />
-          </div>
+          {TIPI.map(({ valore, etichetta, icona }) => (
+            <div className="limit-tipo" key={valore}>
+              <div className="limit-tipo-nome">
+                {icona} {etichetta}
+              </div>
+              <div className="limit-field">
+                <label>Primo tagliando (km)</label>
+                <input
+                  type="number"
+                  defaultValue={piani[valore].primo}
+                  key={`p-${valore}-${piani[valore].primo}`}
+                  onBlur={(e) => salvaPiano(valore, 'primo', e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                  }}
+                />
+              </div>
+              <div className="limit-field">
+                <label>Poi ogni (km)</label>
+                <input
+                  type="number"
+                  defaultValue={piani[valore].ogni}
+                  key={`o-${valore}-${piani[valore].ogni}`}
+                  onBlur={(e) => salvaPiano(valore, 'ogni', e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                  }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -263,11 +274,11 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
                       <button
                         type="button"
                         className={`tipo-badge ${r.tipo}`}
-                        onClick={() => save(v.id, { tipo: r.tipo === 'auto' ? 'motorino' : 'auto' })}
-                        title="Clicca per cambiare tipo"
+                        onClick={() => save(v.id, { tipo: tipoSuccessivo(r.tipo) })}
+                        title={`${etichettaTipo(r.tipo)} — clicca per cambiare tipo`}
                       >
-                        {r.tipo === 'motorino' ? '🛵' : '🚗'}
-                        <span className="tipo-parola">{r.tipo === 'motorino' ? ' Motorino' : ' Auto'}</span>
+                        {iconaTipo(r.tipo)}
+                        <span className="tipo-parola"> {etichettaTipo(r.tipo)}</span>
                       </button>
                     </td>
                   )}

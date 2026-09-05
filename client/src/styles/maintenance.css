@@ -13,12 +13,51 @@
   flex-wrap: wrap;
 }
 
+/* Ogni tipo di mezzo ha il suo riquadro con due numeri: il primo tagliando
+   e ogni quanto tocca poi. Per motorini e auto i due numeri coincidono; i
+   Pulse 4 vogliono il primo a 4.000 e i seguenti ogni 8.100. */
+.limit-tipo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 210px;
+  min-width: 190px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.limit-tipo-nome {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
 .limit-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
   flex: 1;
   min-width: 150px;
+}
+
+.limit-tipo .limit-field {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.limit-tipo .limit-field label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.limit-tipo .limit-field input {
+  width: 88px;
+  flex: none;
+  text-align: right;
 }
 
 .limit-field label {
@@ -57,6 +96,14 @@
   background: rgba(59, 130, 246, 0.12);
   color: var(--color-primary);
   border-color: rgba(59, 130, 246, 0.35);
+}
+
+/* il terzo tipo deve distinguersi anche da telefono, dove resta la sola
+   icona: colore diverso e moto al posto dello scooter */
+.tipo-badge.pulse4 {
+  background: rgba(168, 85, 247, 0.12);
+  color: #7e22ce;
+  border-color: rgba(168, 85, 247, 0.35);
 }
 
 .km-left {
@@ -182,6 +229,19 @@ html[data-theme='dark'] .tipo-badge {
 html[data-theme='dark'] .tipo-badge.motorino {
   background: rgba(59, 130, 246, 0.2);
   color: #60a5fa;
+}
+
+html[data-theme='dark'] .tipo-badge.pulse4 {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+}
+
+html[data-theme='dark'] .limit-tipo {
+  border-color: var(--color-border);
+}
+
+html[data-theme='dark'] .limit-tipo-nome {
+  color: var(--color-text);
 }
 
 html[data-theme='dark'] .maintenance-table th {
