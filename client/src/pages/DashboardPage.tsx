@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { toISODate, formatFullDate, formatISOShort } from '../lib/date';
-import { kmMancanti, pianiDaImpostazioni, tipoValido, trattoDiRiferimento, PIANI_PREDEFINITI } from '../lib/tagliandi';
+import { kmMancanti, pianiDaImpostazioni, pianoDi, trattoDiRiferimento } from '../lib/tagliandi';
 import type { Piano, TipoMezzo } from '../lib/tagliandi';
 import type { Person, Zone, Assignment, AttendanceRecord, Vehicle } from '../lib/types';
 import '../styles/dashboard.css';
@@ -17,7 +17,7 @@ export function DashboardPage() {
   const [vacations, setVacations] = useState<{ personId: number; dateStart: string; dateEnd: string }[]>([]);
   const [revisioni, setRevisioni] = useState<{ vehicleId: number; scadenza: string | null; km: number | null }[]>([]);
   const [tagliandi, setTagliandi] = useState<{ vehicleId: number; km: number | null; tipo: string | null }[]>([]);
-  const [piani, setPiani] = useState<Record<TipoMezzo, Piano>>(PIANI_PREDEFINITI);
+  const [piani, setPiani] = useState<Record<TipoMezzo, Piano>>({});
   const [selectedCard, setSelectedCard] = useState<CardKey | null>(null);
 
   const toggleCard = (k: CardKey) => setSelectedCard((cur) => (cur === k ? null : k));
@@ -118,7 +118,7 @@ export function DashboardPage() {
     .filter((v) => v.km !== null && v.km !== undefined)
     .map((v) => {
       const t = tagliandoByVehicle.get(v.id);
-      const piano = piani[tipoValido(t?.tipo)];
+      const piano = pianoDi(piani, t?.tipo || '');
       return {
         plate: v.name || 'senza targa',
         left: kmMancanti(v.km as number, t?.km, piano),

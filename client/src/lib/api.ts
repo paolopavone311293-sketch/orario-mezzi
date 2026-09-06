@@ -465,6 +465,17 @@ function maintenanceApi(table: string) {
         tipo: (r.tipo as string | null) || null,
       }));
     },
+    /**
+     * Solo il tipo di mezzo. L'upsert scrive la colonna che gli passi e
+     * lascia stare le altre: i km e la data dell'ultimo tagliando restano
+     * dove sono, che con `set` verrebbero azzerati.
+     */
+    setTipo: async (vehicleId: number, tipo: string) => {
+      const { error } = await supabase
+        .from(T(table))
+        .upsert([{ vehicle_id: vehicleId, tipo }], { onConflict: 'vehicle_id' });
+      if (error) throw error;
+    },
     set: async (
       vehicleId: number,
       scadenza: string | null,

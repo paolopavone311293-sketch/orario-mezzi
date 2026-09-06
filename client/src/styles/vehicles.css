@@ -325,3 +325,16 @@ html[data-theme='dark'] .vehicle-name-input {
     font-size: 12px;
   }
 }
+
+/* La tendina del tipo di mezzo dentro il modulo «aggiungi mezzo»: sta fra la
+   targa e il tasto, e sotto i 1024px il modulo va in colonna, quindi si
+   allarga come gli altri. */
+.tipo-nuovo-mezzo {
+  min-width: 190px;
+}
+
+@media (max-width: 1024px) {
+  .tipo-nuovo-mezzo {
+    min-width: 0;
+  }
+}

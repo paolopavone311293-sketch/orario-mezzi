@@ -4,7 +4,22 @@ import ExcelJS, { type BorderStyle } from 'exceljs';
 import { EditContext } from '../App';
 import { ModernSelect } from '../components/ModernSelect';
 import { useDialog } from '../components/DialogContext';
+import {
+  CHIAVE_TIPI,
+  CHIAVE_TIPI_TOLTI,
+  PIANO_NUOVO,
+  TIPI_BASE,
+  chiaviDi,
+  codiceDaNome,
+  tipiAggiunti,
+  tipiTolti,
+  tipoPredefinitoFra,
+} from '../lib/tagliandi';
+import type { Tipo } from '../lib/tagliandi';
 import type { Assignment, Person, Vehicle } from '../lib/types';
+
+/** Le icone fra cui scegliere per un tipo di mezzo nuovo. */
+const ICONE = ['🛵', '🚗', '🏍️', '🛺', '🚙', '🚚', '🚛'];
 import '../styles/settings.css';
 
 export function SettingsPage() {
@@ -18,6 +33,16 @@ export function SettingsPage() {
   const [selPerson, setSelPerson] = useState<number | ''>('');
   const [selVehicle, setSelVehicle] = useState<number | ''>('');
 
+  // Tipi di mezzo aggiunti a mano (quelli di sempre non si toccano)
+  const [tipiExtra, setTipiExtra] = useState<Tipo[]>([]);
+  const [tolti, setTolti] = useState<string[]>([]);
+  const [tipiInUso, setTipiInUso] = useState<Set<string>>(new Set());
+  const [mezziConTipo, setMezziConTipo] = useState(0);
+  const [nuovoNome, setNuovoNome] = useState('');
+  const [nuovaIcona, setNuovaIcona] = useState(ICONE[0]);
+  const [nuovoPrimo, setNuovoPrimo] = useState(String(PIANO_NUOVO.primo));
+  const [nuovoOgni, setNuovoOgni] = useState(String(PIANO_NUOVO.ogni));
+
   useEffect(() => {
     api.people.list().then(setPeople);
     api.zones.list().then((zones) => {
@@ -26,7 +51,122 @@ export function SettingsPage() {
       setVehicles(all);
     });
     api.assignments.defaults().then(setDefaults);
+    api.settings
+      .all()
+      .then((impostazioni) => {
+        setTipiExtra(tipiAggiunti(impostazioni));
+        setTolti(tipiTolti(impostazioni));
+      })
+      .catch(() => {});
+    // serve a non far togliere un tipo che qualche mezzo sta usando
+    api.tagliandi
+      .list()
+      .then((righe) => {
+        setTipiInUso(new Set(righe.map((r) => r.tipo).filter(Boolean) as string[]));
+        setMezziConTipo(righe.filter((r) => r.tipo).length);
+      })
+      .catch(() => {});
   }, []);
+
+  /**
+   * Un tipo nuovo: il nome lo scrive lui, il codice lo ricavo io perche' e'
+   * quello che finisce nel database e non deve avere spazi o accenti.
+   * L'elenco sta tutto in una chiave sola delle impostazioni.
+   */
+  const aggiungiTipo = async () => {
+    const nome = nuovoNome.trim();
+    if (!nome) return;
+
+    const valore = codiceDaNome(nome);
+    if (!valore) {
+      dialog.alert('Nome non valido', 'Scrivi un nome con almeno una lettera o un numero.');
+      return;
+    }
+    if ([...TIPI_BASE, ...tipiExtra].some((t) => t.valore === valore)) {
+      dialog.alert('Tipo già presente', 'Un tipo di mezzo che si chiama così c\'è già.');
+      return;
+    }
+
+    const primo = Number(nuovoPrimo) || PIANO_NUOVO.primo;
+    const ogni = Number(nuovoOgni) || PIANO_NUOVO.ogni;
+    const elenco = [...tipiExtra, { valore, etichetta: nome, icona: nuovaIcona }];
+
+    try {
+      await api.settings.set(CHIAVE_TIPI, JSON.stringify(elenco));
+      await api.settings.set(chiaviDi(valore).primo, String(primo));
+      await api.settings.set(chiaviDi(valore).ogni, String(ogni));
+      setTipiExtra(elenco);
+      setNuovoNome('');
+      setNuovoPrimo(String(PIANO_NUOVO.primo));
+      setNuovoOgni(String(PIANO_NUOVO.ogni));
+    } catch (err) {
+      console.error('Errore salvataggio tipo:', err);
+      dialog.alert('Errore', 'Non sono riuscito a salvare il tipo di mezzo.');
+    }
+  };
+
+  /**
+   * I mezzi che non hanno mai avuto un tipo scritto: a schermo si vedono come
+   * il tipo predefinito, ma nella tabella dei tagliandi non c'e' nessuna riga
+   * che lo dica. Contano come «in uso» per quel tipo, altrimenti togliendolo
+   * finirebbero zitti zitti dentro un altro.
+   */
+  const tipiVisibili = [...TIPI_BASE.filter((t) => !tolti.includes(t.valore)), ...tipiExtra];
+  const mezziSenzaTipo = Math.max(0, vehicles.length - mezziConTipo);
+  const predefinito = tipoPredefinitoFra(tipiVisibili);
+
+  const tipoOccupato = (valore: string) =>
+    tipiInUso.has(valore) || (mezziSenzaTipo > 0 && valore === predefinito);
+
+  /** Rimette un tipo di sempre che era stato tolto. */
+  const rimettiTipo = async (valore: string) => {
+    const elenco = tolti.filter((x) => x !== valore);
+    try {
+      await api.settings.set(CHIAVE_TIPI_TOLTI, JSON.stringify(elenco));
+      setTolti(elenco);
+    } catch (err) {
+      console.error('Errore ripristino tipo:', err);
+    }
+  };
+
+  const rimuoviTipo = (t: Tipo) => {
+    if (tipoOccupato(t.valore)) {
+      const perche = tipiInUso.has(t.valore)
+        ? 'Ci sono dei mezzi segnati come «' + t.etichetta + '».'
+        : 'Ci sono ' + mezziSenzaTipo + ' mezzi a cui non hai mai scelto un tipo: l\'app li tratta come «' + t.etichetta + '».';
+      dialog.alert(
+        'Tipo in uso',
+        perche + ' Cambia prima il loro tipo nella pagina Tagliandi (con Modifica Targhe acceso), poi potrai toglierlo.'
+      );
+      return;
+    }
+    if (tipiVisibili.length <= 1) {
+      dialog.alert('Serve almeno un tipo', 'Non posso togliere l\'ultimo tipo di mezzo rimasto.');
+      return;
+    }
+    dialog.confirm({
+      title: 'Togliere il tipo?',
+      message: '«' + t.etichetta + '» sparisce dalla tendina dei mezzi e dalla pagina KM tagliandi.',
+      confirmText: 'Togli',
+      isDestructive: true,
+      onConfirm: async () => {
+        const eDiSempre = TIPI_BASE.some((x) => x.valore === t.valore);
+        try {
+          if (eDiSempre) {
+            const elenco = [...tolti, t.valore];
+            await api.settings.set(CHIAVE_TIPI_TOLTI, JSON.stringify(elenco));
+            setTolti(elenco);
+          } else {
+            const elenco = tipiExtra.filter((x) => x.valore !== t.valore);
+            await api.settings.set(CHIAVE_TIPI, JSON.stringify(elenco));
+            setTipiExtra(elenco);
+          }
+        } catch (err) {
+          console.error('Errore rimozione tipo:', err);
+        }
+      },
+    });
+  };
 
   // Numero mostrato in "Zone e Mezzi" = posizione (1-based) nell'elenco ordinato
   const vehicleNumber = useMemo(() => {
@@ -272,6 +412,109 @@ export function SettingsPage() {
             </div>
           ) : (
             <p className="empty-message">Nessun mezzo fisso assegnato</p>
+          )}
+        </section>
+
+        <section className="settings-section">
+          <h2>🧰 Tipi di mezzo</h2>
+          <p className="section-description">
+            Ogni tipo ha i suoi km fra un tagliando e l'altro. Quello che aggiungi qui
+            compare nella tendina di «Zone e Mezzi» quando inserisci un mezzo, e nella
+            pagina «KM tagliandi», dove puoi cambiargli i numeri.
+          </p>
+
+          <div className="tipo-nuovo-form">
+            <input
+              placeholder="Nome del tipo (es. Ape Piaggio)"
+              value={nuovoNome}
+              onChange={(e) => setNuovoNome(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && aggiungiTipo()}
+            />
+            <div className="tipo-icone">
+              {ICONE.map((i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`tipo-icona ${nuovaIcona === i ? 'scelta' : ''}`}
+                  onClick={() => setNuovaIcona(i)}
+                  title="Icona del tipo"
+                >
+                  {i}
+                </button>
+              ))}
+            </div>
+            <div className="tipo-km">
+              <label>
+                Primo tagliando (km)
+                <input
+                  type="number"
+                  value={nuovoPrimo}
+                  onChange={(e) => setNuovoPrimo(e.target.value)}
+                />
+              </label>
+              <label>
+                Poi ogni (km)
+                <input
+                  type="number"
+                  value={nuovoOgni}
+                  onChange={(e) => setNuovoOgni(e.target.value)}
+                />
+              </label>
+            </div>
+            <button className="primary" onClick={aggiungiTipo} disabled={!nuovoNome.trim()}>
+              Aggiungi tipo
+            </button>
+          </div>
+
+          <div className="fixed-list">
+            {tipiVisibili.map((t) => {
+              const occupato = tipoOccupato(t.valore);
+              return (
+                <div key={t.valore} className="fixed-item">
+                  <span className="fixed-num">{t.icona}</span>
+                  <div className="fixed-info">
+                    <span className="fixed-plate">{t.etichetta}</span>
+                    <span className="fixed-person">
+                      {occupato
+                        ? 'in uso su dei mezzi'
+                        : TIPI_BASE.some((x) => x.valore === t.valore)
+                          ? 'nessun mezzo lo usa'
+                          : 'aggiunto da te'}
+                    </span>
+                  </div>
+                  <button
+                    className="fixed-remove"
+                    title={occupato ? 'Ci sono mezzi che lo usano' : 'Togli questo tipo'}
+                    onClick={() => rimuoviTipo(t)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {tolti.length > 0 && (
+            <>
+              <p className="section-description">Tipi tolti, si possono rimettere:</p>
+              <div className="fixed-list">
+                {TIPI_BASE.filter((t) => tolti.includes(t.valore)).map((t) => (
+                  <div key={t.valore} className="fixed-item tipo-tolto">
+                    <span className="fixed-num">{t.icona}</span>
+                    <div className="fixed-info">
+                      <span className="fixed-plate">{t.etichetta}</span>
+                      <span className="fixed-person">tolto</span>
+                    </div>
+                    <button
+                      className="secondary tipo-rimetti"
+                      onClick={() => rimettiTipo(t.valore)}
+                    >
+                      Rimetti
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </section>
 

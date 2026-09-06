@@ -1,23 +1,25 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { EditContext } from '../App';
 import { api } from '../lib/api';
 import type { MaintenanceApi } from '../lib/api';
 import { DatePicker } from '../components/DatePicker';
 import { useDialog } from '../components/DialogContext';
 import { formatISOShort, toISODate } from '../lib/date';
 import {
-  CHIAVI,
-  PIANI_PREDEFINITI,
-  TIPI,
+  TIPI_BASE,
+  TIPO_PREDEFINITO,
   etichettaTipo,
   iconaTipo,
   kmMancanti,
   pianiDaImpostazioni,
+  pianoDi,
   prossimoTagliando,
   tipoSuccessivo,
   tipoValido,
   trattoDiRiferimento,
+  tuttiITipi,
 } from '../lib/tagliandi';
-import type { Piano, TipoMezzo } from '../lib/tagliandi';
+import type { Piano, Tipo as TipoElenco, TipoMezzo } from '../lib/tagliandi';
 import type { Vehicle } from '../lib/types';
 import '../styles/maintenance.css';
 
@@ -42,8 +44,12 @@ interface MaintenancePageProps {
 export function MaintenancePage({ title, subtitle, dataApi, variant }: MaintenancePageProps) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [records, setRecords] = useState<Record<number, Rec>>({});
-  const [piani, setPiani] = useState<Record<Tipo, Piano>>(PIANI_PREDEFINITI);
+  const [piani, setPiani] = useState<Record<Tipo, Piano>>({});
+  const [tipi, setTipi] = useState<TipoElenco[]>(TIPI_BASE);
   const { confirm } = useDialog();
+  // Il tipo si sceglie quando si aggiunge il mezzo, in Zone e Mezzi. Qui la
+  // colonna serve solo a correggere, percio' compare con «Modifica Targhe».
+  const { editVehicles } = useContext(EditContext);
 
   useEffect(() => {
     api.zones.list().then((zones) => {
@@ -56,13 +62,19 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
         map[r.vehicleId] = {
           scadenza: r.scadenza,
           km: r.km,
-          tipo: tipoValido(r.tipo),
+          // si tiene il valore com'e' scritto: se e' un tipo tolto dalle
+          // Impostazioni e poi rimesso, il mezzo se lo ritrova
+          tipo: r.tipo || TIPO_PREDEFINITO,
         };
       });
       setRecords(map);
     });
     if (variant === 'km') {
-      api.settings.all().then((s) => setPiani(pianiDaImpostazioni(s)));
+      api.settings.all().then((s) => {
+        const elenco = tuttiITipi(s);
+        setTipi(elenco);
+        setPiani(pianiDaImpostazioni(s, elenco));
+      });
     }
   }, [dataApi, variant]);
 
@@ -85,7 +97,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
     const km = kmOf(id);
     if (km === null) return null;
     const r = rec(id);
-    return kmMancanti(km, r.km, piani[r.tipo]);
+    return kmMancanti(km, r.km, pianoDi(piani, r.tipo));
   };
 
   const byPosition = useMemo(
@@ -155,7 +167,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
   const segnaTagliando = (v: Vehicle) => {
     const km = kmOf(v.id);
     if (km === null) return;
-    const prossimo = prossimoTagliando(km, piani[rec(v.id).tipo]);
+    const prossimo = prossimoTagliando(km, pianoDi(piani, rec(v.id).tipo));
     confirm({
       title: 'Tagliando fatto',
       message:
@@ -164,18 +176,6 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
       confirmText: 'Sì, fatto',
       onConfirm: () => save(v.id, { km, scadenza: toISODate(new Date()) }),
     });
-  };
-
-  /** I km di un tipo di mezzo: 'primo' = primo tagliando, 'ogni' = i seguenti */
-  const salvaPiano = async (tipo: Tipo, quale: 'primo' | 'ogni', value: string) => {
-    const n = Number(value);
-    if (!n || n <= 0) return;
-    setPiani((p) => ({ ...p, [tipo]: { ...p[tipo], [quale]: n } }));
-    try {
-      await api.settings.set(CHIAVI[tipo][quale], String(n));
-    } catch (err) {
-      console.error('Errore salvataggio km del tipo:', err);
-    }
   };
 
   /** Colore riga: giallo 1 mese / arancione 2 settimane / rosso 1 settimana o scaduta */
@@ -195,7 +195,7 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
     const left = rimanenti(id);
     if (left === null) return '';
     const r = rec(id);
-    const tratto = trattoDiRiferimento(r.km, piani[r.tipo]);
+    const tratto = trattoDiRiferimento(r.km, pianoDi(piani, r.tipo));
     if (left <= tratto * 0.05) return 'rossa'; // ultimi 5% o superato
     if (left <= tratto * 0.1) return 'arancione'; // ultimi 10%
     if (left <= tratto * 0.2) return 'gialla'; // ultimi 20%
@@ -211,49 +211,14 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
         <p className="subtitle">{subtitle}</p>
       </div>
 
-      {isKm && (
-        <div className="limits-card">
-          {TIPI.map(({ valore, etichetta, icona }) => (
-            <div className="limit-tipo" key={valore}>
-              <div className="limit-tipo-nome">
-                {icona} {etichetta}
-              </div>
-              <div className="limit-field">
-                <label>Primo tagliando (km)</label>
-                <input
-                  type="number"
-                  defaultValue={piani[valore].primo}
-                  key={`p-${valore}-${piani[valore].primo}`}
-                  onBlur={(e) => salvaPiano(valore, 'primo', e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                  }}
-                />
-              </div>
-              <div className="limit-field">
-                <label>Poi ogni (km)</label>
-                <input
-                  type="number"
-                  defaultValue={piani[valore].ogni}
-                  key={`o-${valore}-${piani[valore].ogni}`}
-                  onBlur={(e) => salvaPiano(valore, 'ogni', e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       <div className="maintenance-table-container">
-        <table className="maintenance-table">
+        <table className={`maintenance-table ${isKm && editVehicles ? 'con-tipo' : ''}`}>
           <thead>
             <tr>
               <th className="col-numero">N°</th>
               <th className="col-targa">Targa</th>
-              {isKm && <th className="col-tipo">Tipo</th>}
+              {isKm && editVehicles && <th className="col-tipo">Tipo</th>}
               {!isKm && <th className="col-scadenza">Scadenza</th>}
               <th className="col-km">Km</th>
               {isKm && <th className="col-ultimo">Ultimo tagliando</th>}
@@ -269,16 +234,16 @@ export function MaintenancePage({ title, subtitle, dataApi, variant }: Maintenan
                   <td className="col-numero">{numberOf[v.id]}</td>
                   <td className="col-targa">{v.name || '—'}</td>
 
-                  {isKm && (
+                  {isKm && editVehicles && (
                     <td className="col-tipo">
                       <button
                         type="button"
-                        className={`tipo-badge ${r.tipo}`}
-                        onClick={() => save(v.id, { tipo: tipoSuccessivo(r.tipo) })}
-                        title={`${etichettaTipo(r.tipo)} — clicca per cambiare tipo`}
+                        className={`tipo-badge ${tipoValido(r.tipo, tipi)}`}
+                        onClick={() => save(v.id, { tipo: tipoSuccessivo(tipoValido(r.tipo, tipi), tipi) })}
+                        title={`${etichettaTipo(tipoValido(r.tipo, tipi), tipi)} — clicca per cambiare tipo`}
                       >
-                        {iconaTipo(r.tipo)}
-                        <span className="tipo-parola"> {etichettaTipo(r.tipo)}</span>
+                        {iconaTipo(tipoValido(r.tipo, tipi), tipi)}
+                        <span className="tipo-parola"> {etichettaTipo(tipoValido(r.tipo, tipi), tipi)}</span>
                       </button>
                     </td>
                   )}

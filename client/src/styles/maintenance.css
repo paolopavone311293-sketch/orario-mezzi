@@ -80,6 +80,20 @@
   border-color: var(--color-primary);
 }
 
+/* la conferma che il numero e' stato salvato: la pagina dei km non ha
+   altri segnali, e senza si resta col dubbio di aver scritto a vuoto */
+.limit-salvato {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-success, #16a34a);
+}
+
+.nota-km-tagliandi {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--color-text-light);
+}
+
 .tipo-badge {
   padding: 4px 8px;
   font-size: 12px;
@@ -98,12 +112,24 @@
   border-color: rgba(59, 130, 246, 0.35);
 }
 
-/* il terzo tipo deve distinguersi anche da telefono, dove resta la sola
-   icona: colore diverso e moto al posto dello scooter */
+/* i tipi in piu' devono distinguersi anche da telefono, dove resta la
+   sola icona: ognuno il suo colore, oltre alla sua icona */
 .tipo-badge.pulse4 {
   background: rgba(168, 85, 247, 0.12);
   color: #7e22ce;
   border-color: rgba(168, 85, 247, 0.35);
+}
+
+.tipo-badge.pulse3l5e {
+  background: rgba(20, 184, 166, 0.14);
+  color: #0f766e;
+  border-color: rgba(20, 184, 166, 0.35);
+}
+
+.tipo-badge.pulse3l2e {
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
 .km-left {
@@ -236,6 +262,16 @@ html[data-theme='dark'] .tipo-badge.pulse4 {
   color: #c084fc;
 }
 
+html[data-theme='dark'] .tipo-badge.pulse3l5e {
+  background: rgba(20, 184, 166, 0.22);
+  color: #5eead4;
+}
+
+html[data-theme='dark'] .tipo-badge.pulse3l2e {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fcd34d;
+}
+
 html[data-theme='dark'] .limit-tipo {
   border-color: var(--color-border);
 }
@@ -359,22 +395,25 @@ html[data-theme='dark'] .fatto-btn {
     width: 68px;
   }
 
-  /* il tasto va sotto al numero, cosi' la colonna non ruba spazio agli altri */
+  /* Casella e tasto stanno affiancati come sul computer: senza la colonna
+     del tipo (che si vede solo in modifica) lo spazio adesso c'e', e la riga
+     scende da 66 a 45px — sedici mezzi per schermata invece di undici. I
+     numeri sono tirati al pixel: la tabella viene 343px, quanto il riquadro. */
   .maintenance-table .col-ultimo {
     width: 84px;
   }
 
   .ultimo-cella {
-    flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
   }
 
   /* La casella dell'ultimo tagliando si vede sempre, anche vuota: e' li'
      che si scrive il numero a mano. Per non far sembrare la riga il doppio
      di quello che serve e' bassa e stretta quanto basta. */
   .ultimo-cella .km-input {
-    width: 100%;
+    width: 54px;
+    flex: none;
     padding: 3px 4px;
     font-size: 13px;
     text-align: center;
@@ -388,8 +427,22 @@ html[data-theme='dark'] .fatto-btn {
   }
 
   .fatto-btn {
-    padding: 4px 8px;
+    padding: 4px 5px;
     font-size: 11px;
+  }
+
+  /* Con «Modifica Targhe» acceso c'e' anche la colonna del tipo, e affiancati
+     non ci starebbero: 379px contro i 343 dello schermo. Li' tornano uno
+     sopra l'altro — la riga si alza, ma non c'e' da trascinare di lato
+     proprio mentre si tocca il tondino del tipo. */
+  .maintenance-table.con-tipo .ultimo-cella {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+  }
+
+  .maintenance-table.con-tipo .ultimo-cella .km-input {
+    width: 100%;
   }
 
   .ultimo-data {

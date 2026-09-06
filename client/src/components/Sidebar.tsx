@@ -88,6 +88,14 @@ export function Sidebar() {
             <span className="label">Tagliandi</span>
           </NavLink>
           <NavLink
+            to="/km-tagliandi"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setIsOpen(false)}
+          >
+            <span className="icon">📏</span>
+            <span className="label">KM tagliandi</span>
+          </NavLink>
+          <NavLink
             to="/note"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             onClick={() => setIsOpen(false)}

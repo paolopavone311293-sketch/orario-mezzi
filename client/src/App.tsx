@@ -22,6 +22,7 @@ import { VacationsPage } from './pages/VacationsPage';
 import { ReportPage } from './pages/ReportPage';
 import { NotesPage } from './pages/NotesPage';
 import { MaintenancePage } from './pages/MaintenancePage';
+import { KmTagliandiPage } from './pages/KmTagliandiPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { api } from './lib/api';
 
@@ -102,6 +103,7 @@ function App() {
                     />
                   }
                 />
+                <Route path="/km-tagliandi" element={<KmTagliandiPage />} />
                 <Route path="/note" element={<NotesPage />} />
                 <Route path="/impostazioni" element={<SettingsPage />} />
               </Routes>

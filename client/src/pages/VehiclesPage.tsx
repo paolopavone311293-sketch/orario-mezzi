@@ -6,6 +6,8 @@ import { ModernSelect } from '../components/ModernSelect';
 import { DatePicker } from '../components/DatePicker';
 import type { Assignment, AttendanceRecord, Person, Zone } from '../lib/types';
 import { EditContext } from '../App';
+import { TIPI_BASE, tuttiITipi } from '../lib/tagliandi';
+import type { Tipo, TipoMezzo } from '../lib/tagliandi';
 import '../styles/vehicles.css';
 
 export function VehiclesPage() {
@@ -21,6 +23,17 @@ export function VehiclesPage() {
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
   const [editingVehicleName, setEditingVehicleName] = useState('');
   const [newVehicleName, setNewVehicleName] = useState('');
+  // resta com'e' fra un mezzo e l'altro: se ne aggiungono in fila dello stesso tipo
+  const [newVehicleTipo, setNewVehicleTipo] = useState<TipoMezzo>('motorino');
+  // i tipi comprendono quelli aggiunti dalle Impostazioni
+  const [tipi, setTipi] = useState<Tipo[]>(TIPI_BASE);
+
+  useEffect(() => {
+    api.settings
+      .all()
+      .then((s) => setTipi(tuttiITipi(s)))
+      .catch(() => {});
+  }, []);
 
   const loadZones = () => api.zones.list().then((data: any) => {
     setZones(data.filter((z: any) => z.id !== undefined));
@@ -158,7 +171,10 @@ export function VehiclesPage() {
       return;
     }
     try {
-      await api.vehicles.create(name, zoneId);
+      const creato = await api.vehicles.create(name, zoneId);
+      // il tipo si sceglie qui, cosi' il mezzo nasce gia' col suo tagliando
+      // giusto invece di partire da quello predefinito
+      await api.tagliandi.setTipo(creato.id, newVehicleTipo);
       setNewVehicleName('');
       loadZones();
     } catch (err) {
@@ -212,6 +228,13 @@ export function VehiclesPage() {
               onChange={(e) => setNewVehicleName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addVehicle()}
             />
+            <div className="tipo-nuovo-mezzo">
+              <ModernSelect
+                value={newVehicleTipo}
+                onChange={(v) => setNewVehicleTipo(v as TipoMezzo)}
+                options={tipi.map((t) => ({ value: t.valore, label: `${t.icona} ${t.etichetta}` }))}
+              />
+            </div>
             <button className="primary" onClick={addVehicle}>
               Aggiungi
             </button>

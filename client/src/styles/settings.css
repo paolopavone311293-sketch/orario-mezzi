@@ -343,3 +343,80 @@ html[data-theme='dark'] .empty-message {
     margin-top: 8px;
   }
 }
+
+/* Tipi di mezzo: il modulo per aggiungerne uno (nome, icona, i due km) */
+.tipo-nuovo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tipo-icone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Le regole generali dei tasti mettono padding: 10px 20px, che dentro un
+   quadrotto da 40px spinge l'icona fuori centro: qui il padding va azzerato
+   e il contenuto centrato a mano. */
+.tipo-icona {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 36px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+}
+
+.tipo-icona.scelta {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.tipo-km {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tipo-km label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-700);
+}
+
+.tipo-km input {
+  width: 130px;
+}
+
+.tipo-nuovo-form > button {
+  align-self: flex-start;
+  min-width: 140px;
+}
+
+html[data-theme='dark'] .tipo-icona {
+  background: var(--color-bg-light);
+  color: var(--color-text);
+}
+
+/* i tipi tolti restano in fondo, spenti, con il tasto per rimetterli */
+.fixed-item.tipo-tolto {
+  opacity: 0.65;
+}
+
+.tipo-rimetti {
+  padding: 6px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
