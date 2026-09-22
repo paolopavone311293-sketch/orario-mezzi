@@ -14,6 +14,7 @@ import {
   tipiAggiunti,
   tipiTolti,
   tipoPredefinitoFra,
+  tipoValido,
 } from '../lib/tagliandi';
 import type { Tipo } from '../lib/tagliandi';
 import type { Assignment, Person, Vehicle } from '../lib/types';
@@ -36,8 +37,8 @@ export function SettingsPage() {
   // Tipi di mezzo aggiunti a mano (quelli di sempre non si toccano)
   const [tipiExtra, setTipiExtra] = useState<Tipo[]>([]);
   const [tolti, setTolti] = useState<string[]>([]);
-  const [tipiInUso, setTipiInUso] = useState<Set<string>>(new Set());
-  const [mezziConTipo, setMezziConTipo] = useState(0);
+  // il tipo scritto per ogni mezzo (id -> valore); chi non ha la riga non c'e'
+  const [tipoDi, setTipoDi] = useState<Record<number, string>>({});
   const [nuovoNome, setNuovoNome] = useState('');
   const [nuovaIcona, setNuovaIcona] = useState(ICONE[0]);
   const [nuovoPrimo, setNuovoPrimo] = useState(String(PIANO_NUOVO.primo));
@@ -62,8 +63,11 @@ export function SettingsPage() {
     api.tagliandi
       .list()
       .then((righe) => {
-        setTipiInUso(new Set(righe.map((r) => r.tipo).filter(Boolean) as string[]));
-        setMezziConTipo(righe.filter((r) => r.tipo).length);
+        const mappa: Record<number, string> = {};
+        righe.forEach((r) => {
+          if (r.tipo) mappa[r.vehicleId] = r.tipo;
+        });
+        setTipoDi(mappa);
       })
       .catch(() => {});
   }, []);
@@ -111,7 +115,32 @@ export function SettingsPage() {
    * che lo dica. Contano come «in uso» per quel tipo, altrimenti togliendolo
    * finirebbero zitti zitti dentro un altro.
    */
+  const tipiInUso = new Set(Object.values(tipoDi));
+  const mezziConTipo = Object.keys(tipoDi).length;
   const tipiVisibili = [...TIPI_BASE.filter((t) => !tolti.includes(t.valore)), ...tipiExtra];
+
+  /**
+   * Cambia il tipo di un mezzo direttamente dalla lista dei mezzi fissi, con
+   * «Modifica Targhe» acceso. Scrive solo il tipo: km e data dell'ultimo
+   * tagliando restano dove sono.
+   */
+  const cambiaTipo = async (vehicleId: number, tipo: string) => {
+    if (!tipo) return;
+    const prima = tipoDi[vehicleId];
+    setTipoDi((m) => ({ ...m, [vehicleId]: tipo }));
+    try {
+      await api.tagliandi.setTipo(vehicleId, tipo);
+    } catch (err) {
+      console.error('Errore salvataggio tipo del mezzo:', err);
+      setTipoDi((m) => {
+        const copia = { ...m };
+        if (prima) copia[vehicleId] = prima;
+        else delete copia[vehicleId];
+        return copia;
+      });
+      dialog.alert('Errore', 'Non sono riuscito a salvare il tipo del mezzo.');
+    }
+  };
   const mezziSenzaTipo = Math.max(0, vehicles.length - mezziConTipo);
   const predefinito = tipoPredefinitoFra(tipiVisibili);
 
@@ -398,6 +427,20 @@ export function SettingsPage() {
                         <span className="fixed-person" title={p?.name ?? 'Sconosciuto'}>
                           {p?.name ?? 'Sconosciuto'}
                         </span>
+                        {editVehicles && (
+                          <select
+                            className="fixed-tipo"
+                            value={tipoValido(tipoDi[d.vehicleId], tipiVisibili)}
+                            onChange={(e) => cambiaTipo(d.vehicleId, e.target.value)}
+                            title="Tipo di mezzo"
+                          >
+                            {tipiVisibili.map((t) => (
+                              <option key={t.valore} value={t.valore}>
+                                {t.icona} {t.etichetta}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </div>
                       <button
                         className="fixed-remove"

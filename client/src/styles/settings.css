@@ -420,3 +420,23 @@ html[data-theme='dark'] .tipo-icona {
   font-size: 13px;
   white-space: nowrap;
 }
+
+/* Il tipo del mezzo sotto al nome, nelle schede dei mezzi fissi: compare
+   solo con «Modifica Targhe» acceso. Tendina del telefono (select vera),
+   cosi' la lista si apre sopra a tutto e non viene tagliata dalla scheda. */
+.fixed-tipo {
+  margin-top: 4px;
+  max-width: 100%;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: white;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+html[data-theme='dark'] .fixed-tipo {
+  background: var(--color-bg-light);
+}
